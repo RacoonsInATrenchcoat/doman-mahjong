@@ -1,5 +1,6 @@
 GoodToKnow:
  - Get a filetree: "tree /F > structure.txt"
+ - Kebab-case is used for file names, CSS classes, and component names. Inside TypeScript object properties, camelCase is the default used.
 
 Steps:
 
@@ -12,6 +13,9 @@ Steps:
 7, Create the Firebase project in the console
 9 Initialize Firebase Hosting and link it to the project
 
+Inner logic:
+1, Tiles.ts sets the blueprint standard for a "Tile". Then later define each Tile with values, makes it a constant value that is exported to use.
+2, 
 
 Starting Versions:
 1, Node v24.16.0
