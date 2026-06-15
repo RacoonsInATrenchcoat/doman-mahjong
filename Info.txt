@@ -16,6 +16,13 @@ Steps:
 Starting Versions:
 1, Node v24.16.0
 2, Npm 11.17.0
+3, Firebase 15.20.0
+
+Links:
+Firebase: https://console.firebase.google.com/u/0/project/doman-mahjong/overview
+(✔ What do you want to use as your public directory? dist
+✔ Configure as a single-page app (rewrite all urls to /index.html)? Yes
+✔ Set up automatic builds and deploys with GitHub? No)
 
 Assets:
 
