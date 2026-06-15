@@ -1,0 +1,22 @@
+GoodToKnow:
+ - Get a filetree: "tree /F > structure.txt"
+
+Steps:
+
+1, Check prerequisites - NPM & Node
+2, Scaffold the Vite + React + TypeScript project
+3, Clean up the Vite boilerplate
+4, Create the agreed folder structure inside src/
+5, Set up Git and push to GitHub
+6, Install and set up the Firebase CLI
+7, Create the Firebase project in the console
+9 Initialize Firebase Hosting and link it to the project
+
+
+Starting Versions:
+1, Node v24.16.0
+2, Npm 11.17.0
+
+Assets:
+
+    Mahjong tiles from FF14 Wiki: https://ffxiv.consolegameswiki.com/wiki/FF14_Wiki
