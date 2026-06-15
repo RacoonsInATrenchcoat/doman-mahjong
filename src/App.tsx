@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { Tile } from "./data/tiles";
 //Have to add "type" otherwise it errors out, due to Typescript rules.
 import TilePicker from "./components/tile-picker/tile-picker";
+import CurrentHand from "./components/current-hand/current-hand";
 
 function App() {
   const [currentHand, setCurrentHand] = useState<Tile[]>([]);
@@ -17,12 +18,12 @@ function App() {
   };
   //Removes a tile
 
-  return (
+return (
     <div className="app">
       <header className="app__header">
         <h1>Doman Mahjong Hand Checker</h1>
-        <p>Hand size: {currentHand.length}</p>
       </header>
+      <CurrentHand currentHand={currentHand} onTileClick={removeTile} />
       <div className="app__main">
         <TilePicker currentHand={currentHand} onTileClick={addTile} />
         <div className="app__results-placeholder">
