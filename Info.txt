@@ -14,8 +14,8 @@ Steps:
 9 Initialize Firebase Hosting and link it to the project
 
 Inner logic:
-1, Tiles.ts sets the blueprint standard for a "Tile". Then later define each Tile with values, makes it a constant value that is exported to use.
-2, 
+1, Tiles.ts sets the blueprint standard for a "Tile". Then it defines each Tile with values, makes them each a constant value (via ID) that is exported to use. 
+2, App.tsx checks the hand.
 
 Starting Versions:
 1, Node v24.16.0

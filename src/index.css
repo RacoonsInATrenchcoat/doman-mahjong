@@ -10,3 +10,108 @@ body {
   color: #f0f0f0;
   min-height: 100vh;
 }
+
+/* App layout */
+/* App layout */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 1rem;
+  gap: 1rem;
+}
+
+.app__header {
+  flex-shrink: 0;
+}
+
+.app__main {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  flex: 1;
+  overflow: hidden;
+}
+
+.app__results-placeholder {
+  flex: 1;
+  background-color: #2a2a2a;
+  border-radius: 6px;
+  padding: 1rem;
+  color: #888;
+}
+
+/* Tile Picker */
+.tile-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 105px; /*Starting width*/
+  overflow: hidden;
+  transition: width 0.3s ease;
+  background-color: #2a2a2a;
+  border-radius: 6px;
+  padding: 0.5rem;
+}
+
+.tile-picker:hover {
+  width: 520px;
+}
+
+.tile-picker__suit-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.tile-picker__suit-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: #888;
+  width: 2rem;
+  flex-shrink: 0;
+}
+
+.tile-picker__tiles {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.25rem;
+}
+
+.tile-picker__tile {
+  position: relative;
+  background: none;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 2px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.tile-picker__tile img {
+  display: block;
+  width: 40px;
+  height: auto;
+}
+
+.tile-picker__tile:hover {
+  border-color: #aaa;
+}
+
+.tile-picker__tile--disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.tile-picker__count {
+  position: absolute;
+  bottom: 2px;
+  right: 3px;
+  background-color: #e8b84b;
+  color: #1a1a1a;
+  font-size: 0.6rem;
+  font-weight: bold;
+  border-radius: 3px;
+  padding: 0 3px;
+  line-height: 1.4;
+}
