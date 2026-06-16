@@ -12,7 +12,6 @@ body {
 }
 
 /* App layout */
-/* App layout */
 .app {
   display: flex;
   flex-direction: column;
@@ -31,6 +30,11 @@ body {
   gap: 1rem;
   flex: 1;
   overflow: hidden;
+}
+
+.app__title{
+  display: flex;
+  gap: 10px;
 }
 
 .app__results-placeholder {
@@ -115,4 +119,55 @@ body {
   border-radius: 3px;
   padding: 0 3px;
   line-height: 1.4;
+}
+
+.current-hand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background-color: #10331A;
+  outline: 2px solid #D3B284;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  flex-shrink: 0;
+}
+
+.current-hand__tiles {
+  display: flex;
+  flex-direction: row;
+  gap: 0.25rem;
+  flex-wrap: nowrap;
+}
+
+.current-hand__tile {
+  background: none;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 2px;
+  cursor: pointer;
+}
+
+.current-hand__tile img {
+  display: block;
+  width: 40px;
+  height: auto;
+}
+
+.current-hand__tile:hover {
+  border-color: #e05555;
+}
+
+.current-hand__empty-slot {
+  width: 44px;
+  height: 60px;
+  border: 1px dashed #444;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.current-hand__count {
+  font-size: 0.85rem;
+  color: #888;
+  white-space: nowrap;
+  margin-left: auto;
 }

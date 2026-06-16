@@ -21,7 +21,10 @@ function App() {
 return (
     <div className="app">
       <header className="app__header">
-        <h1>Doman Mahjong Hand Checker</h1>
+        <div className="app__title">
+          <img src="/public/tiles/golden-saucer-logo.png" alt="Logo"></img>
+          <h1>Doman Mahjong Hand Checker</h1>
+        </div>
       </header>
       <CurrentHand currentHand={currentHand} onTileClick={removeTile} />
       <div className="app__main">
