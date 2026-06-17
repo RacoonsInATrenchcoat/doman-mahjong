@@ -5,10 +5,13 @@ import { ALL_HANDS } from "./data/hands";
 import { HAND_CHECKERS } from "./logic/hand-checkers";
 import TilePicker from "./components/tile-picker/tile-picker";
 import CurrentHand from "./components/current-hand/current-hand";
+import ResultsList from "./components/results-list/results-list";
 
 function App() {
   const [currentHand, setCurrentHand] = useState<Tile[]>([]);
   //Start as an empty array
+  const [isResultsOpen, setIsResultsOpen] = useState(true);
+
 
   const addTile = (tile: Tile) => {
     setCurrentHand((prev) => [...prev, tile]);
@@ -19,6 +22,10 @@ function App() {
     setCurrentHand((prev) => prev.filter((_, i) => i !== index));
   };
   //Removes a tile
+
+    const toggleResults = () => {
+    setIsResultsOpen((prev) => !prev);
+  };
 
 const results =
     currentHand.length === 13
@@ -37,21 +44,11 @@ return (
       <CurrentHand currentHand={currentHand} onTileClick={removeTile} />
       <div className="app__main">
         <TilePicker currentHand={currentHand} onTileClick={addTile} />
-        <div className="app__results-placeholder">
-          {results === null ? (
-            <p>Select 13 tiles to see results.</p>
-          ) : (
-            <ul>
-              {results.map(({ hand, result }) => (
-                <li key={hand.id}>
-                  <strong>{hand.name}</strong> ({hand.hanValue} han) --
-                  needs {result.tilesNeeded} tile{result.tilesNeeded !== 1 ? "s" : ""} --
-                  {result.gapDescription}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <ResultsList
+          results={results}
+          isOpen={isResultsOpen}
+          onToggle={toggleResults}
+        />
       </div>
     </div>
   );
