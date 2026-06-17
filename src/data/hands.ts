@@ -29,7 +29,7 @@ export const ALL_HANDS: Hand[] = [
   // 3 Han
   { id: "honitsu", name: "Honitsu", hanValue: 3, description: "One suit only, plus any honours." },
 
-  // 6 Han
+  // 6 Han, checking only for closed hand.
   { id: "chinitsu", name: "Chinitsu", hanValue: 6, description: "One suit only, no honours at all." },
 
   // Yakuman (represented as 13 Han)
