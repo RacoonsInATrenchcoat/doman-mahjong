@@ -250,3 +250,56 @@ body {
   color: #bbb;
   margin-top: 0.25rem;
 }
+
+/* Results Panel */
+.app__results-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 0.5rem;
+  overflow: hidden;
+}
+
+/* Sort Controls */
+.sort-controls {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  align-items: center;
+  background-color: #2a2a2a;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  flex-shrink: 0;
+}
+
+.sort-controls__group {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sort-controls__group label {
+  font-size: 0.8rem;
+  color: #aaa;
+  white-space: nowrap;
+}
+
+.sort-controls__group select {
+  background-color: #3a3a3a;
+  color: #f0f0f0;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.sort-controls__group select:hover {
+  border-color: #aaa;
+}
+
+.sort-controls__group select:focus {
+  outline: none;
+  border-color: #e8b84b;
+}

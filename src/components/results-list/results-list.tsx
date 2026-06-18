@@ -1,10 +1,4 @@
-import type { Hand } from "../../data/hands";
-import type { CheckResult } from "../../logic/hand-checkers";
-
-type ResultEntry = {
-  hand: Hand;
-  result: CheckResult;
-};
+import type { ResultEntry } from "../../logic/hand-sorter";
 
 type ResultsListProps = {
   results: ResultEntry[] | null;
