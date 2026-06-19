@@ -4,12 +4,88 @@ import type { Tile } from "../data/tiles";
 // Types
 
 
+export type TemplateId =
+  | "pair"
+  | "triplet"
+  | "straight"
+  | "honour"
+  | "non-honour"
+  | "terminal";
+// Defines the types of values used, checks that they can only be these.
+
+export type VisualTileRef =
+  | { kind: "tile"; tileId: string }
+  | { kind: "template"; template: TemplateId };
+
+export type VisualSlot = {
+  ref: VisualTileRef;
+  satisfied: boolean;
+};
+
 export type CheckResult = {
   possible: boolean;
   tilesNeeded: number;
   gapDescription: string;
+  visual: VisualSlot[];
 };
-// Defines the types of values used.
+
+// ----------------------------------------------------------------
+// Visual helper functions
+// ----------------------------------------------------------------
+
+// Builds `total` visual slots of one exact tile id, with `haveCount` of
+// them marked satisfied and the rest marked unsatisfied.
+// Example: buildTileSlots("dragon-white", 1, 3) for "has 1 of 3 White Dragon".
+function buildTileSlots(
+  tileId: string,
+  haveCount: number,
+  total: number
+): VisualSlot[] {
+  const slots: VisualSlot[] = [];
+  for (let i = 0; i < total; i++) {
+    slots.push({
+      ref: { kind: "tile", tileId },
+      satisfied: i < haveCount,
+    });
+  }
+  return slots;
+}
+
+// Builds visual slots from an array of real tiles already in hand, all
+// marked satisfied. Used when every tile shown genuinely exists in the hand.
+function buildHeldSlots(tiles: Tile[]): VisualSlot[] {
+  return tiles.map((tile) => ({
+    ref: { kind: "tile", tileId: tile.id },
+    satisfied: true,
+  }));
+}
+
+// Builds `count` generic template slots, all marked unsatisfied.
+// Used only for the four yaku that deliberately do not resolve to a
+// specific tile: Chiitoitsu, Pinfu's pair, Toitoi, Sanankou, Suuankou.
+function buildTemplateSlots(
+  template: TemplateId,
+  count: number
+): VisualSlot[] {
+  const slots: VisualSlot[] = [];
+  for (let i = 0; i < count; i++) {
+    slots.push({
+      ref: { kind: "template", template },
+      satisfied: false,
+    });
+  }
+  return slots;
+}
+
+// Builds visual slots from an array of real tiles already in hand, all
+// marked unsatisfied. Used when a real, known tile needs to be removed
+// or replaced, as opposed to a tile that needs to be added.
+function buildMissingSlots(tiles: Tile[]): VisualSlot[] {
+  return tiles.map((tile) => ({
+    ref: { kind: "tile", tileId: tile.id },
+    satisfied: false,
+  }));
+}
 
 export type CheckerFn = (
   hand: Tile[],
@@ -203,14 +279,17 @@ function checkTanyao(
   _seatWind: string,
   _roundWind: string
 ): CheckResult {
+  const simples = hand.filter((tile) => isSimple(tile));
   const nonSimples = hand.filter((tile) => !isSimple(tile));
   const tilesNeeded = nonSimples.length;
+  const visual = [...buildHeldSlots(simples), ...buildMissingSlots(nonSimples)];
 
   if (tilesNeeded === 0) {
     return {
       possible: true,
       tilesNeeded: 0,
       gapDescription: "All tiles are simples. Hand satisfies Tanyao.",
+      visual,
     };
   }
 
@@ -220,6 +299,7 @@ function checkTanyao(
     gapDescription: `Replace ${tilesNeeded} terminal or honour tile${
       tilesNeeded !== 1 ? "s" : ""
     } with simples (2 to 8).`,
+    visual,
   };
 }
 
@@ -231,14 +311,27 @@ function checkChiitoitsu(
   _roundWind: string
 ): CheckResult {
   const countMap = buildCountMap(hand);
-  const uniquePairs = [...countMap.values()].filter((c) => c >= 2).length;
+  const pairTileIds = [...countMap.entries()]
+    .filter(([, c]) => c >= 2)
+    .map(([id]) => id);
+  const uniquePairs = pairTileIds.length;
   const tilesNeeded = 7 - uniquePairs;
+
+  const heldPairTiles = pairTileIds.flatMap((id) => {
+    const tile = hand.find((t) => t.id === id)!;
+    return [tile, tile];
+  });
+  const visual = [
+    ...buildHeldSlots(heldPairTiles),
+    ...buildTemplateSlots("pair", tilesNeeded > 0 ? tilesNeeded : 0),
+  ];
 
   if (tilesNeeded <= 0) {
     return {
       possible: true,
       tilesNeeded: 0,
       gapDescription: "All 7 pairs present. Hand satisfies Chiitoitsu.",
+      visual,
     };
   }
 
@@ -248,6 +341,7 @@ function checkChiitoitsu(
     gapDescription: `Has ${uniquePairs} pair${
       uniquePairs !== 1 ? "s" : ""
     }. Needs ${tilesNeeded} more.`,
+    visual,
   };
 }
 
@@ -267,19 +361,38 @@ function checkKokushi(
 ): CheckResult {
   const countMap = buildCountMap(hand);
 
-  const uniqueCount = KOKUSHI_TILES.filter(
+  const heldOrphanIds = KOKUSHI_TILES.filter(
     (id) => (countMap.get(id) ?? 0) >= 1
-  ).length;
+  );
+  const missingOrphanIds = KOKUSHI_TILES.filter(
+    (id) => (countMap.get(id) ?? 0) === 0
+  );
   const hasDuplicate = KOKUSHI_TILES.some(
     (id) => (countMap.get(id) ?? 0) >= 2
   );
-  const missingOrphans = 13 - uniqueCount;
+  const uniqueCount = heldOrphanIds.length;
+  const missingOrphans = missingOrphanIds.length;
+
+  const heldTiles = heldOrphanIds.map((id) => hand.find((t) => t.id === id)!);
+  const missingSlots: VisualSlot[] = missingOrphanIds.map((id) => ({
+    ref: { kind: "tile", tileId: id },
+    satisfied: false,
+  }));
+  let visual = [...buildHeldSlots(heldTiles), ...missingSlots];
+
+  if (missingOrphans === 0 && !hasDuplicate) {
+    visual = [
+      ...visual,
+      { ref: { kind: "tile", tileId: heldOrphanIds[0] }, satisfied: false },
+    ];
+  }
 
   if (missingOrphans === 0 && hasDuplicate) {
     return {
       possible: true,
       tilesNeeded: 0,
       gapDescription: "Hand satisfies Kokushi Musou.",
+      visual,
     };
   }
 
@@ -289,6 +402,7 @@ function checkKokushi(
       tilesNeeded: 1,
       gapDescription:
         "Has all 13 terminals and honours. Needs 1 duplicate of any.",
+      visual,
     };
   }
 
@@ -299,9 +413,9 @@ function checkKokushi(
     gapDescription: `Has ${uniqueCount} of 13 terminals and honours.${
       !hasDuplicate ? " Also needs 1 duplicate." : ""
     }`,
+    visual,
   };
 }
-
 // ----------------------------------------------------------------
 // Dragon yakuhai checkers
 // ----------------------------------------------------------------
@@ -313,10 +427,11 @@ function checkYakuhaiWhite(
 ): CheckResult {
   const count = hand.filter((t) => t.id === "dragon-white").length;
   const tilesNeeded = Math.max(0, 3 - count);
+  const visual = buildTileSlots("dragon-white", count, 3);
   if (tilesNeeded === 0) {
-    return { possible: true, tilesNeeded: 0, gapDescription: "Has White Dragon triplet." };
+    return { possible: true, tilesNeeded: 0, gapDescription: "Has White Dragon triplet.", visual };
   }
-  return { possible: true, tilesNeeded, gapDescription: `Has ${count} of 3 White Dragon tiles.` };
+  return { possible: true, tilesNeeded, gapDescription: `Has ${count} of 3 White Dragon tiles.`, visual };
 }
 
 function checkYakuhaiGreen(
@@ -326,10 +441,11 @@ function checkYakuhaiGreen(
 ): CheckResult {
   const count = hand.filter((t) => t.id === "dragon-green").length;
   const tilesNeeded = Math.max(0, 3 - count);
+  const visual = buildTileSlots("dragon-green", count, 3);
   if (tilesNeeded === 0) {
-    return { possible: true, tilesNeeded: 0, gapDescription: "Has Green Dragon triplet." };
+    return { possible: true, tilesNeeded: 0, gapDescription: "Has Green Dragon triplet.", visual };
   }
-  return { possible: true, tilesNeeded, gapDescription: `Has ${count} of 3 Green Dragon tiles.` };
+  return { possible: true, tilesNeeded, gapDescription: `Has ${count} of 3 Green Dragon tiles.`, visual };
 }
 
 function checkYakuhaiRed(
@@ -339,15 +455,12 @@ function checkYakuhaiRed(
 ): CheckResult {
   const count = hand.filter((t) => t.id === "dragon-red").length;
   const tilesNeeded = Math.max(0, 3 - count);
+  const visual = buildTileSlots("dragon-red", count, 3);
   if (tilesNeeded === 0) {
-    return { possible: true, tilesNeeded: 0, gapDescription: "Has Red Dragon triplet." };
+    return { possible: true, tilesNeeded: 0, gapDescription: "Has Red Dragon triplet.", visual };
   }
-  return { possible: true, tilesNeeded, gapDescription: `Has ${count} of 3 Red Dragon tiles.` };
+  return { possible: true, tilesNeeded, gapDescription: `Has ${count} of 3 Red Dragon tiles.`, visual };
 }
-
-// ----------------------------------------------------------------
-// Wind yakuhai checkers
-// ----------------------------------------------------------------
 
 function checkSeatWind(
   hand: Tile[],
@@ -358,10 +471,11 @@ function checkSeatWind(
   const count = hand.filter((t) => t.id === tileId).length;
   const tilesNeeded = Math.max(0, 3 - count);
   const name = seatWind.charAt(0).toUpperCase() + seatWind.slice(1);
+  const visual = buildTileSlots(tileId, count, 3);
   if (tilesNeeded === 0) {
-    return { possible: true, tilesNeeded: 0, gapDescription: `Has ${name} (seat wind) triplet.` };
+    return { possible: true, tilesNeeded: 0, gapDescription: `Has ${name} (seat wind) triplet.`, visual };
   }
-  return { possible: true, tilesNeeded, gapDescription: `Has ${count} of 3 ${name} seat wind tiles.` };
+  return { possible: true, tilesNeeded, gapDescription: `Has ${count} of 3 ${name} seat wind tiles.`, visual };
 }
 
 function checkRoundWind(
@@ -373,10 +487,11 @@ function checkRoundWind(
   const count = hand.filter((t) => t.id === tileId).length;
   const tilesNeeded = Math.max(0, 3 - count);
   const name = roundWind.charAt(0).toUpperCase() + roundWind.slice(1);
+  const visual = buildTileSlots(tileId, count, 3);
   if (tilesNeeded === 0) {
-    return { possible: true, tilesNeeded: 0, gapDescription: `Has ${name} (round wind) triplet.` };
+    return { possible: true, tilesNeeded: 0, gapDescription: `Has ${name} (round wind) triplet.`, visual };
   }
-  return { possible: true, tilesNeeded, gapDescription: `Has ${count} of 3 ${name} round wind tiles.` };
+  return { possible: true, tilesNeeded, gapDescription: `Has ${count} of 3 ${name} round wind tiles.`, visual };
 }
 
 // ----------------------------------------------------------------
