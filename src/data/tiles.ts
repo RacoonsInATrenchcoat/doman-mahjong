@@ -59,3 +59,8 @@ export const ALL_TILES: Tile[] = [
   { id: "dragon-green", suit: "dragon", value: "green", imagePath: "/tiles/dragon-green.png" },
   { id: "dragon-red",   suit: "dragon", value: "red",   imagePath: "/tiles/dragon-red.png" },
 ];
+
+export function getTileImagePath(tileId: string): string {
+  const tile = ALL_TILES.find((t) => t.id === tileId);
+  return tile ? tile.imagePath : "";
+}

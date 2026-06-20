@@ -303,3 +303,25 @@ body {
   outline: none;
   border-color: #e8b84b;
 }
+
+/* Results List Visual Slots */
+.results-list__visual {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 3px;
+  margin: 0.4rem 0;
+}
+
+.results-list__visual-tile {
+  display: block;
+  height: 32px;
+  width: auto;
+  border-radius: 3px;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.results-list__visual-tile--missing {
+  opacity: 0.35;
+}

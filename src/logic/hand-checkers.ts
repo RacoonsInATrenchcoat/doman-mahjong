@@ -29,6 +29,15 @@ export type CheckResult = {
   visual: VisualSlot[];
 };
 
+export const TEMPLATE_IMAGES: Record<TemplateId, string> = {
+  pair: "/templates/pair.png",
+  triplet: "/templates/triplet.png",
+  straight: "/templates/straight.png",
+  honour: "/templates/honour.gif",
+  "non-honour": "/templates/non-honour.gif",
+  terminal: "/templates/terminal.gif",
+};
+
 // ----------------------------------------------------------------
 // Visual helper functions
 // ----------------------------------------------------------------
@@ -85,6 +94,51 @@ function buildMissingSlots(tiles: Tile[]): VisualSlot[] {
     ref: { kind: "tile", tileId: tile.id },
     satisfied: false,
   }));
+}
+
+// Builds visual slots for two copies of a v, v+1, v+2 sequence in one suit.
+// Used by Iipeiko, where a duplicate sequence is the goal.
+function buildIipeikoVisual(
+  hand: Tile[],
+  suit: "man" | "pin" | "sou",
+  v: number
+): VisualSlot[] {
+  const values = [v, v + 1, v + 2];
+  return values.flatMap((val) => {
+    const id = `${suit}-${val}`;
+    const have = hand.filter((t) => t.id === id);
+    const haveCount = Math.min(2, have.length);
+    const missingCount = 2 - haveCount;
+    const missingSlots: VisualSlot[] = Array.from({ length: missingCount }, () => ({
+      ref: { kind: "tile", tileId: id },
+      satisfied: false,
+    }));
+    return [...buildHeldSlots(have.slice(0, haveCount)), ...missingSlots];
+  });
+}
+
+// Builds visual slots for one v, v+1, v+2 sequence appearing in all three suits.
+// Used by Sanshoku Doujun.
+function buildSanshokuDoujunVisual(hand: Tile[], v: number): VisualSlot[] {
+  const suits = ["man", "pin", "sou"] as const;
+  const values = [v, v + 1, v + 2];
+  return suits.flatMap((suit) =>
+    values.map((val) => {
+      const id = `${suit}-${val}`;
+      const satisfied = hand.some((t) => t.id === id);
+      return { ref: { kind: "tile" as const, tileId: id }, satisfied };
+    })
+  );
+}
+
+// Builds visual slots for one full 1-9 run in one suit.
+// Used by Ittsu.
+function buildIttsuVisual(hand: Tile[], suit: "man" | "pin" | "sou"): VisualSlot[] {
+  const counts = getSuitCounts(hand, suit);
+  return [1, 2, 3, 4, 5, 6, 7, 8, 9].map((v) => {
+    const id = `${suit}-${v}`;
+    return { ref: { kind: "tile" as const, tileId: id }, satisfied: counts[v] >= 1 };
+  });
 }
 
 export type CheckerFn = (
@@ -503,9 +557,12 @@ function checkHonitsu(
   _seatWind: string,
   _roundWind: string
 ): CheckResult {
+  const honours = hand.filter((t) => isHonour(t));
   const suitedTiles = hand.filter((t) => !isHonour(t));
+
   if (suitedTiles.length === 0) {
-    return { possible: true, tilesNeeded: 0, gapDescription: "All tiles are honours. Hand satisfies Honitsu." };
+    const visual = buildHeldSlots(honours);
+    return { possible: true, tilesNeeded: 0, gapDescription: "All tiles are honours. Hand satisfies Honitsu.", visual };
   }
 
   const suitCounts = new Map<string, number>();
@@ -515,7 +572,8 @@ function checkHonitsu(
 
   if (suitCounts.size === 1) {
     const suit = [...suitCounts.keys()][0];
-    return { possible: true, tilesNeeded: 0, gapDescription: `All suited tiles are ${suit}. Hand satisfies Honitsu.` };
+    const visual = buildHeldSlots([...honours, ...suitedTiles]);
+    return { possible: true, tilesNeeded: 0, gapDescription: `All suited tiles are ${suit}. Hand satisfies Honitsu.`, visual };
   }
 
   let dominantSuit = "man";
@@ -524,11 +582,18 @@ function checkHonitsu(
     if (count > maxCount) { dominantSuit = suit; maxCount = count; }
   }
 
-  const tilesNeeded = suitedTiles.filter((t) => t.suit !== dominantSuit).length;
+  const dominantTiles = suitedTiles.filter((t) => t.suit === dominantSuit);
+  const offSuitTiles = suitedTiles.filter((t) => t.suit !== dominantSuit);
+  const tilesNeeded = offSuitTiles.length;
+  const visual = [
+    ...buildHeldSlots([...honours, ...dominantTiles]),
+    ...buildMissingSlots(offSuitTiles),
+  ];
   return {
     possible: true,
     tilesNeeded,
     gapDescription: `Has tiles from ${suitCounts.size} suits. Replace ${tilesNeeded} off-suit tile${tilesNeeded !== 1 ? "s" : ""} with ${dominantSuit} tiles or honours.`,
+    visual,
   };
 }
 
@@ -545,14 +610,19 @@ function checkChinitsu(
     if (count > maxCount) { dominantSuit = suit; maxCount = count; }
   }
 
-  const offSuit = hand.filter((t) => t.suit !== dominantSuit).length;
+  const dominantTiles = hand.filter((t) => t.suit === dominantSuit);
+  const offSuitTiles = hand.filter((t) => t.suit !== dominantSuit);
+  const offSuit = offSuitTiles.length;
+  const visual = [...buildHeldSlots(dominantTiles), ...buildMissingSlots(offSuitTiles)];
+
   if (offSuit === 0) {
-    return { possible: true, tilesNeeded: 0, gapDescription: `All tiles are ${dominantSuit}. Hand satisfies Chinitsu.` };
+    return { possible: true, tilesNeeded: 0, gapDescription: `All tiles are ${dominantSuit}. Hand satisfies Chinitsu.`, visual };
   }
   return {
     possible: true,
     tilesNeeded: offSuit,
     gapDescription: `Replace ${offSuit} tile${offSuit !== 1 ? "s" : ""} with ${dominantSuit} tiles.`,
+    visual,
   };
 }
 
@@ -561,14 +631,18 @@ function checkTsuuiisou(
   _seatWind: string,
   _roundWind: string
 ): CheckResult {
-  const nonHonours = hand.filter((t) => !isHonour(t)).length;
-  if (nonHonours === 0) {
-    return { possible: true, tilesNeeded: 0, gapDescription: "All tiles are honours. Hand satisfies Tsuuiisou." };
+  const honours = hand.filter((t) => isHonour(t));
+  const nonHonours = hand.filter((t) => !isHonour(t));
+  const visual = [...buildHeldSlots(honours), ...buildMissingSlots(nonHonours)];
+
+  if (nonHonours.length === 0) {
+    return { possible: true, tilesNeeded: 0, gapDescription: "All tiles are honours. Hand satisfies Tsuuiisou.", visual };
   }
   return {
     possible: true,
-    tilesNeeded: nonHonours,
-    gapDescription: `Replace ${nonHonours} non-honour tile${nonHonours !== 1 ? "s" : ""} with winds or dragons.`,
+    tilesNeeded: nonHonours.length,
+    gapDescription: `Replace ${nonHonours.length} non-honour tile${nonHonours.length !== 1 ? "s" : ""} with winds or dragons.`,
+    visual,
   };
 }
 
@@ -577,14 +651,18 @@ function checkChinroutou(
   _seatWind: string,
   _roundWind: string
 ): CheckResult {
-  const nonTerminals = hand.filter((t) => !isTerminal(t)).length;
-  if (nonTerminals === 0) {
-    return { possible: true, tilesNeeded: 0, gapDescription: "All tiles are terminals. Hand satisfies Chinroutou." };
+  const terminals = hand.filter((t) => isTerminal(t));
+  const nonTerminals = hand.filter((t) => !isTerminal(t));
+  const visual = [...buildHeldSlots(terminals), ...buildMissingSlots(nonTerminals)];
+
+  if (nonTerminals.length === 0) {
+    return { possible: true, tilesNeeded: 0, gapDescription: "All tiles are terminals. Hand satisfies Chinroutou.", visual };
   }
   return {
     possible: true,
-    tilesNeeded: nonTerminals,
-    gapDescription: `Replace ${nonTerminals} non-terminal tile${nonTerminals !== 1 ? "s" : ""} with 1s and 9s.`,
+    tilesNeeded: nonTerminals.length,
+    gapDescription: `Replace ${nonTerminals.length} non-terminal tile${nonTerminals.length !== 1 ? "s" : ""} with 1s and 9s.`,
+    visual,
   };
 }
 
@@ -597,14 +675,18 @@ function checkRyuuiisou(
   _seatWind: string,
   _roundWind: string
 ): CheckResult {
-  const invalid = hand.filter((t) => !RYUUIISOU_IDS.has(t.id)).length;
-  if (invalid === 0) {
-    return { possible: true, tilesNeeded: 0, gapDescription: "All tiles are in the green set. Hand satisfies Ryuuiisou." };
+  const validTiles = hand.filter((t) => RYUUIISOU_IDS.has(t.id));
+  const invalidTiles = hand.filter((t) => !RYUUIISOU_IDS.has(t.id));
+  const visual = [...buildHeldSlots(validTiles), ...buildMissingSlots(invalidTiles)];
+
+  if (invalidTiles.length === 0) {
+    return { possible: true, tilesNeeded: 0, gapDescription: "All tiles are in the green set. Hand satisfies Ryuuiisou.", visual };
   }
   return {
     possible: true,
-    tilesNeeded: invalid,
-    gapDescription: `Replace ${invalid} tile${invalid !== 1 ? "s" : ""} with green tiles: sou 2, 3, 4, 6, 8, or Green Dragon.`,
+    tilesNeeded: invalidTiles.length,
+    gapDescription: `Replace ${invalidTiles.length} tile${invalidTiles.length !== 1 ? "s" : ""} with green tiles: sou 2, 3, 4, 6, 8, or Green Dragon.`,
+    visual,
   };
 }
 
@@ -618,17 +700,31 @@ function checkToitoi(
   _roundWind: string
 ): CheckResult {
   const countMap = buildCountMap(hand);
-  const triplets = [...countMap.values()].filter((c) => c >= 3).length;
-  const singles = [...countMap.values()].filter((c) => c === 1).length;
+  const tripletIds = [...countMap.entries()].filter(([, c]) => c >= 3).map(([id]) => id);
+  const singleIds = [...countMap.entries()].filter(([, c]) => c === 1).map(([id]) => id);
+  const triplets = tripletIds.length;
+  const singles = singleIds.length;
+
+  const heldTripletTiles = tripletIds.flatMap((id) => {
+    const tile = hand.find((t) => t.id === id)!;
+    return [tile, tile, tile];
+  });
+  const singleTiles = singleIds.map((id) => hand.find((t) => t.id === id)!);
+  const visual = [
+    ...buildHeldSlots(heldTripletTiles),
+    ...buildTemplateSlots("triplet", Math.max(0, 4 - triplets)),
+    ...buildMissingSlots(singleTiles),
+  ];
 
   if (triplets >= 4) {
-    return { possible: true, tilesNeeded: 0, gapDescription: "Four triplets present. Hand satisfies Toitoi." };
+    return { possible: true, tilesNeeded: 0, gapDescription: "Four triplets present. Hand satisfies Toitoi.", visual };
   }
   const tilesNeeded = Math.max(4 - triplets, singles);
   return {
     possible: true,
     tilesNeeded,
     gapDescription: `Has ${triplets} of 4 triplets. ${singles > 0 ? `${singles} singleton${singles !== 1 ? "s" : ""} need replacing.` : "Needs more triplets."}`,
+    visual,
   };
 }
 
@@ -640,12 +736,22 @@ function checkSuuankou(
   _roundWind: string
 ): CheckResult {
   const countMap = buildCountMap(hand);
-  const triplets = [...countMap.values()].filter((c) => c >= 3).length;
+  const tripletIds = [...countMap.entries()].filter(([, c]) => c >= 3).map(([id]) => id);
+  const triplets = tripletIds.length;
+
+  const heldTripletTiles = tripletIds.flatMap((id) => {
+    const tile = hand.find((t) => t.id === id)!;
+    return [tile, tile, tile];
+  });
+  const visual = [
+    ...buildHeldSlots(heldTripletTiles),
+    ...buildTemplateSlots("triplet", Math.max(0, 4 - triplets)),
+  ];
 
   if (triplets >= 4) {
-    return { possible: true, tilesNeeded: 0, gapDescription: "Four concealed triplets. Hand satisfies Suuankou." };
+    return { possible: true, tilesNeeded: 0, gapDescription: "Four concealed triplets. Hand satisfies Suuankou.", visual };
   }
-  return { possible: true, tilesNeeded: 4 - triplets, gapDescription: `Has ${triplets} of 4 concealed triplets.` };
+  return { possible: true, tilesNeeded: 4 - triplets, gapDescription: `Has ${triplets} of 4 concealed triplets.`, visual };
 }
 
 function checkSanankou(
@@ -654,12 +760,22 @@ function checkSanankou(
   _roundWind: string
 ): CheckResult {
   const countMap = buildCountMap(hand);
-  const triplets = [...countMap.values()].filter((c) => c >= 3).length;
+  const tripletIds = [...countMap.entries()].filter(([, c]) => c >= 3).map(([id]) => id);
+  const triplets = tripletIds.length;
+
+  const heldTripletTiles = tripletIds.flatMap((id) => {
+    const tile = hand.find((t) => t.id === id)!;
+    return [tile, tile, tile];
+  });
+  const visual = [
+    ...buildHeldSlots(heldTripletTiles),
+    ...buildTemplateSlots("triplet", Math.max(0, 3 - triplets)),
+  ];
 
   if (triplets >= 3) {
-    return { possible: true, tilesNeeded: 0, gapDescription: `Has ${triplets} concealed triplets. Hand satisfies Sanankou.` };
+    return { possible: true, tilesNeeded: 0, gapDescription: `Has ${triplets} concealed triplets. Hand satisfies Sanankou.`, visual };
   }
-  return { possible: true, tilesNeeded: 3 - triplets, gapDescription: `Has ${triplets} of 3 needed concealed triplets.` };
+  return { possible: true, tilesNeeded: 3 - triplets, gapDescription: `Has ${triplets} of 3 needed concealed triplets.`, visual };
 }
 
 function checkDaisangen(
@@ -673,14 +789,18 @@ function checkDaisangen(
     (sum, id) => sum + Math.max(0, 3 - (countMap.get(id) ?? 0)), 0
   );
   const triplets = dragonIds.filter((id) => (countMap.get(id) ?? 0) >= 3).length;
+  const visual = dragonIds.flatMap((id) =>
+    buildTileSlots(id, countMap.get(id) ?? 0, 3)
+  );
 
   if (tilesNeeded === 0) {
-    return { possible: true, tilesNeeded: 0, gapDescription: "Has all three dragon triplets. Hand satisfies Daisangen." };
+    return { possible: true, tilesNeeded: 0, gapDescription: "Has all three dragon triplets. Hand satisfies Daisangen.", visual };
   }
   return {
     possible: true,
     tilesNeeded,
     gapDescription: `Has ${triplets} of 3 dragon triplets. Needs ${tilesNeeded} more dragon tile${tilesNeeded !== 1 ? "s" : ""}.`,
+    visual,
   };
 }
 
@@ -695,14 +815,18 @@ function checkDaisuushi(
     (sum, id) => sum + Math.max(0, 3 - (countMap.get(id) ?? 0)), 0
   );
   const triplets = windIds.filter((id) => (countMap.get(id) ?? 0) >= 3).length;
+  const visual = windIds.flatMap((id) =>
+    buildTileSlots(id, countMap.get(id) ?? 0, 3)
+  );
 
   if (tilesNeeded === 0) {
-    return { possible: true, tilesNeeded: 0, gapDescription: "Has all four wind triplets. Hand satisfies Daisuushi." };
+    return { possible: true, tilesNeeded: 0, gapDescription: "Has all four wind triplets. Hand satisfies Daisuushi.", visual };
   }
   return {
     possible: true,
     tilesNeeded,
     gapDescription: `Has ${triplets} of 4 wind triplets. Needs ${tilesNeeded} more wind tile${tilesNeeded !== 1 ? "s" : ""}.`,
+    visual,
   };
 }
 
@@ -712,25 +836,28 @@ function checkShousangen(
   _roundWind: string
 ): CheckResult {
   const countMap = buildCountMap(hand);
-  const dragonCounts = [
-    countMap.get("dragon-white") ?? 0,
-    countMap.get("dragon-green") ?? 0,
-    countMap.get("dragon-red") ?? 0,
-  ].sort((a, b) => b - a);
+  const dragonIds = ["dragon-white", "dragon-green", "dragon-red"];
+  const dragonEntries = dragonIds
+    .map((id) => ({ id, count: countMap.get(id) ?? 0 }))
+    .sort((a, b) => b.count - a.count);
 
-  const tilesNeeded =
-    Math.max(0, 3 - dragonCounts[0]) +
-    Math.max(0, 3 - dragonCounts[1]) +
-    Math.max(0, 2 - dragonCounts[2]);
-  const triplets = dragonCounts.filter((c) => c >= 3).length;
+  const targets = [3, 3, 2];
+  const tilesNeeded = dragonEntries.reduce(
+    (sum, entry, i) => sum + Math.max(0, targets[i] - entry.count), 0
+  );
+  const triplets = dragonEntries.filter((e) => e.count >= 3).length;
+  const visual = dragonEntries.flatMap((entry, i) =>
+    buildTileSlots(entry.id, entry.count, targets[i])
+  );
 
   if (tilesNeeded === 0) {
-    return { possible: true, tilesNeeded: 0, gapDescription: "Has two dragon triplets and one dragon pair. Hand satisfies Shousangen." };
+    return { possible: true, tilesNeeded: 0, gapDescription: "Has two dragon triplets and one dragon pair. Hand satisfies Shousangen.", visual };
   }
   return {
     possible: true,
     tilesNeeded,
     gapDescription: `Has ${triplets} dragon triplet${triplets !== 1 ? "s" : ""}. Needs 2 triplets and 1 dragon pair.`,
+    visual,
   };
 }
 
@@ -740,27 +867,28 @@ function checkShousuushi(
   _roundWind: string
 ): CheckResult {
   const countMap = buildCountMap(hand);
-  const windCounts = [
-    countMap.get("wind-east") ?? 0,
-    countMap.get("wind-south") ?? 0,
-    countMap.get("wind-west") ?? 0,
-    countMap.get("wind-north") ?? 0,
-  ].sort((a, b) => b - a);
+  const windIds = ["wind-east", "wind-south", "wind-west", "wind-north"];
+  const windEntries = windIds
+    .map((id) => ({ id, count: countMap.get(id) ?? 0 }))
+    .sort((a, b) => b.count - a.count);
 
-  const tilesNeeded =
-    Math.max(0, 3 - windCounts[0]) +
-    Math.max(0, 3 - windCounts[1]) +
-    Math.max(0, 3 - windCounts[2]) +
-    Math.max(0, 2 - windCounts[3]);
-  const triplets = windCounts.filter((c) => c >= 3).length;
+  const targets = [3, 3, 3, 2];
+  const tilesNeeded = windEntries.reduce(
+    (sum, entry, i) => sum + Math.max(0, targets[i] - entry.count), 0
+  );
+  const triplets = windEntries.filter((e) => e.count >= 3).length;
+  const visual = windEntries.flatMap((entry, i) =>
+    buildTileSlots(entry.id, entry.count, targets[i])
+  );
 
   if (tilesNeeded === 0) {
-    return { possible: true, tilesNeeded: 0, gapDescription: "Has three wind triplets and one wind pair. Hand satisfies Shousuushi." };
+    return { possible: true, tilesNeeded: 0, gapDescription: "Has three wind triplets and one wind pair. Hand satisfies Shousuushi.", visual };
   }
   return {
     possible: true,
     tilesNeeded,
     gapDescription: `Has ${triplets} wind triplet${triplets !== 1 ? "s" : ""}. Needs 3 wind triplets and 1 wind pair.`,
+    visual,
   };
 }
 
@@ -784,13 +912,19 @@ function checkSanshokuDoukou(
     if (needed < bestTilesNeeded) { bestTilesNeeded = needed; bestValue = v; }
   }
 
+  const countsBySuit = { man: manCounts, pin: pinCounts, sou: souCounts };
+  const visual = (["man", "pin", "sou"] as const).flatMap((suit) =>
+    buildTileSlots(`${suit}-${bestValue}`, countsBySuit[suit][bestValue], 3)
+  );
+
   if (bestTilesNeeded === 0) {
-    return { possible: true, tilesNeeded: 0, gapDescription: `Has triplets of ${bestValue} in all three suits. Hand satisfies Sanshoku Doukou.` };
+    return { possible: true, tilesNeeded: 0, gapDescription: `Has triplets of ${bestValue} in all three suits. Hand satisfies Sanshoku Doukou.`, visual };
   }
   return {
     possible: true,
     tilesNeeded: bestTilesNeeded,
     gapDescription: `Best candidate: value ${bestValue} triplet across suits. Needs ${bestTilesNeeded} more tile${bestTilesNeeded !== 1 ? "s" : ""}.`,
+    visual,
   };
 }
 
@@ -806,12 +940,15 @@ function checkPinfu(
   seatWind: string,
   roundWind: string
 ): CheckResult {
-  const honours = hand.filter((t) => isHonour(t)).length;
-  if (honours > 0) {
+  const honours = hand.filter((t) => isHonour(t));
+  const nonHonours = hand.filter((t) => !isHonour(t));
+  if (honours.length > 0) {
+    const visual = [...buildHeldSlots(nonHonours), ...buildMissingSlots(honours)];
     return {
       possible: true,
-      tilesNeeded: honours,
-      gapDescription: `Has ${honours} honour tile${honours !== 1 ? "s" : ""}. Pinfu requires sequences only, so all honours must be replaced.`,
+      tilesNeeded: honours.length,
+      gapDescription: `Has ${honours.length} honour tile${honours.length !== 1 ? "s" : ""}. Pinfu requires sequences only, so all honours must be replaced.`,
+      visual,
     };
   }
 
@@ -826,16 +963,20 @@ function checkPinfu(
   );
 
   if (hasValidPair) {
+    const visual = buildHeldSlots(hand);
     return {
       possible: true,
       tilesNeeded: 0,
       gapDescription: "No honours and a valid non-yakuhai pair exists. Hand may satisfy Pinfu.",
+      visual,
     };
   }
+  const visual = [...buildHeldSlots(hand), ...buildTemplateSlots("pair", 1)];
   return {
     possible: true,
     tilesNeeded: 1,
     gapDescription: "No valid non-yakuhai pair found. The pair cannot be a dragon or wind tile.",
+    visual,
   };
 }
 
@@ -850,10 +991,12 @@ function checkIipeiko(
     const counts = getSuitCounts(hand, suit);
     for (let v = 1; v <= 7; v++) {
       if (counts[v] >= 2 && counts[v + 1] >= 2 && counts[v + 2] >= 2) {
+        const visual = buildIipeikoVisual(hand, suit, v);
         return {
           possible: true,
           tilesNeeded: 0,
           gapDescription: `Has two ${suit} ${v}-${v + 1}-${v + 2} sequences. Hand satisfies Iipeiko.`,
+          visual,
         };
       }
     }
@@ -861,6 +1004,8 @@ function checkIipeiko(
 
   let bestTilesNeeded = 6;
   let bestDesc = "No duplicate sequence found.";
+  let bestSuit: "man" | "pin" | "sou" = "man";
+  let bestV = 1;
 
   for (const suit of suits) {
     const counts = getSuitCounts(hand, suit);
@@ -872,11 +1017,14 @@ function checkIipeiko(
       if (needed < bestTilesNeeded) {
         bestTilesNeeded = needed;
         bestDesc = `Best candidate: two ${suit} ${v}-${v + 1}-${v + 2} sequences. Needs ${needed} more tile${needed !== 1 ? "s" : ""}.`;
+        bestSuit = suit;
+        bestV = v;
       }
     }
   }
 
-  return { possible: true, tilesNeeded: bestTilesNeeded, gapDescription: bestDesc };
+  const visual = buildIipeikoVisual(hand, bestSuit, bestV);
+  return { possible: true, tilesNeeded: bestTilesNeeded, gapDescription: bestDesc, visual };
 }
 
 function checkSanshokuDoujun(
@@ -894,10 +1042,12 @@ function checkSanshokuDoujun(
       pinCounts[v] >= 1 && pinCounts[v + 1] >= 1 && pinCounts[v + 2] >= 1 &&
       souCounts[v] >= 1 && souCounts[v + 1] >= 1 && souCounts[v + 2] >= 1
     ) {
+      const visual = buildSanshokuDoujunVisual(hand, v);
       return {
         possible: true,
         tilesNeeded: 0,
         gapDescription: `Has ${v}-${v + 1}-${v + 2} sequence in all three suits. Hand satisfies Sanshoku Doujun.`,
+        visual,
       };
     }
   }
@@ -913,10 +1063,12 @@ function checkSanshokuDoujun(
     if (needed < bestTilesNeeded) { bestTilesNeeded = needed; bestV = v; }
   }
 
+  const visual = buildSanshokuDoujunVisual(hand, bestV);
   return {
     possible: true,
     tilesNeeded: bestTilesNeeded,
     gapDescription: `Best candidate: ${bestV}-${bestV + 1}-${bestV + 2} across all suits. Needs ${bestTilesNeeded} more tile${bestTilesNeeded !== 1 ? "s" : ""}.`,
+    visual,
   };
 }
 
@@ -931,10 +1083,12 @@ function checkIttsu(
     const counts = getSuitCounts(hand, suit);
     const allPresent = [1, 2, 3, 4, 5, 6, 7, 8, 9].every((v) => counts[v] >= 1);
     if (allPresent) {
+      const visual = buildIttsuVisual(hand, suit);
       return {
         possible: true,
         tilesNeeded: 0,
         gapDescription: `Has 1-2-3, 4-5-6, 7-8-9 in ${suit}. Hand satisfies Ittsu.`,
+        visual,
       };
     }
   }
@@ -950,10 +1104,12 @@ function checkIttsu(
     if (needed < bestTilesNeeded) { bestTilesNeeded = needed; bestSuit = suit; }
   }
 
+  const visual = buildIttsuVisual(hand, bestSuit);
   return {
     possible: true,
     tilesNeeded: bestTilesNeeded,
     gapDescription: `Best suit: ${bestSuit}. Needs ${bestTilesNeeded} more tile${bestTilesNeeded !== 1 ? "s" : ""} for full 1-9 coverage.`,
+    visual,
   };
 }
 
@@ -962,12 +1118,15 @@ function checkChuurenPoutou(
   _seatWind: string,
   _roundWind: string
 ): CheckResult {
-  const honours = hand.filter((t) => isHonour(t)).length;
-  if (honours > 0) {
+  const honours = hand.filter((t) => isHonour(t));
+  const nonHonours = hand.filter((t) => !isHonour(t));
+  if (honours.length > 0) {
+    const visual = [...buildHeldSlots(nonHonours), ...buildMissingSlots(honours)];
     return {
       possible: true,
-      tilesNeeded: honours,
-      gapDescription: `Has ${honours} honour tile${honours !== 1 ? "s" : ""}. Chuuren Poutou requires one suit only.`,
+      tilesNeeded: honours.length,
+      gapDescription: `Has ${honours.length} honour tile${honours.length !== 1 ? "s" : ""}. Chuuren Poutou requires one suit only.`,
+      visual,
     };
   }
 
@@ -979,19 +1138,27 @@ function checkChuurenPoutou(
     if (count > maxCount) { bestSuit = suit; maxCount = count; }
   }
 
-  const offSuit = hand.filter((t) => t.suit !== bestSuit).length;
+  const dominantTiles = hand.filter((t) => t.suit === bestSuit);
+  const offSuitTiles = hand.filter((t) => t.suit !== bestSuit);
+  const offSuit = offSuitTiles.length;
   if (offSuit > 0) {
+    const visual = [...buildHeldSlots(dominantTiles), ...buildMissingSlots(offSuitTiles)];
     return {
       possible: true,
       tilesNeeded: offSuit,
       gapDescription: `Has tiles from multiple suits. Replace ${offSuit} tile${offSuit !== 1 ? "s" : ""} with ${bestSuit} tiles.`,
+      visual,
     };
   }
 
   const counts = getSuitCounts(hand, bestSuit);
   const minRequired = [0, 3, 1, 1, 1, 1, 1, 1, 1, 3];
-  const deficiency = [1, 2, 3, 4, 5, 6, 7, 8, 9].reduce(
+  const values = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  const deficiency = values.reduce(
     (sum, v) => sum + Math.max(0, minRequired[v] - counts[v]), 0
+  );
+  const visual = values.flatMap((v) =>
+    buildTileSlots(`${bestSuit}-${v}`, counts[v], minRequired[v])
   );
 
   if (deficiency === 0) {
@@ -999,12 +1166,14 @@ function checkChuurenPoutou(
       possible: true,
       tilesNeeded: 0,
       gapDescription: `All ${bestSuit} tiles match the 1-1-1-2-3-4-5-6-7-8-9-9-9 pattern. Hand satisfies Chuuren Poutou.`,
+      visual,
     };
   }
   return {
     possible: true,
     tilesNeeded: deficiency,
     gapDescription: `Needs ${deficiency} more ${bestSuit} tile${deficiency !== 1 ? "s" : ""} to complete the Chuuren Poutou pattern.`,
+    visual,
   };
 }
 
