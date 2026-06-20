@@ -42,7 +42,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  width: 105px; /*Starting width*/
+  width: 520px; /*Starting width*/
   overflow: hidden;
   transition: width 0.3s ease;
   background-color: #2a2a2a;
@@ -51,7 +51,7 @@ body {
 }
 
 .tile-picker:hover {
-  width: 520px;
+/*Originally was hover to open, but removed for better visibility. Stays as it may be used later.*/
 }
 
 .tile-picker__suit-row {
@@ -324,4 +324,26 @@ body {
 
 .results-list__visual-tile--missing {
   opacity: 0.35;
+}
+
+.current-hand__reset {
+  background-color: #3a3a3a;
+  color: #f0f0f0;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  margin-left: 0.75rem;
+  flex-shrink: 0;
+}
+
+.current-hand__reset:hover:not(:disabled) {
+  border-color: #e05555;
+  color: #e05555;
+}
+
+.current-hand__reset:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }

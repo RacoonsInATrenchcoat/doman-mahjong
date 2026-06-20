@@ -34,6 +34,10 @@ function App() {
   };
   //Removes a tile
 
+  const clearHand = () => {
+    setCurrentHand([]);
+  };
+//Used for full clearing the hand
     const toggleResults = () => {
     setIsResultsOpen((prev) => !prev);
   };
@@ -56,7 +60,7 @@ return (
       <header className="app__header">
         <h1>Doman Mahjong Hand Checker</h1>
       </header>
-      <CurrentHand currentHand={currentHand} onTileClick={removeTile} />
+      <CurrentHand currentHand={currentHand} onTileClick={removeTile} onReset={clearHand} />
       <div className="app__main">
         <TilePicker currentHand={currentHand} onTileClick={addTile} />
         <div className="app__results-panel">
