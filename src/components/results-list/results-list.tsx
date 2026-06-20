@@ -55,9 +55,14 @@ function ResultsList({ results, isOpen, onToggle }: ResultsListProps) {
                 >
                   <div className="results-list__item-top">
                     <span className="results-list__name">{hand.name}</span>
-                    <span className="results-list__han">
-                      {hand.hanValue} han
-                    </span>
+                    <div className="results-list__item-top-right">
+                      <span className="results-list__steps">
+                        {result.tilesNeeded} step{result.tilesNeeded !== 1 ? "s" : ""}
+                      </span>
+                      <span className="results-list__han">
+                        {hand.hanValue} han
+                      </span>
+                    </div>
                   </div>
                   <div className="results-list__visual">
                     {result.visual.map((slot, index) => (
