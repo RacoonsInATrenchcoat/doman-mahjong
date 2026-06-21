@@ -240,6 +240,17 @@ body {
   font-weight: 600;
 }
 
+.results-list__item-top-right {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.results-list__steps {
+  font-size: 0.8rem;
+  color: #6fa8dc;
+}
+
 .results-list__han {
   font-size: 0.8rem;
   color: #e8b84b;

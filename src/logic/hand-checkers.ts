@@ -96,6 +96,84 @@ function buildMissingSlots(tiles: Tile[]): VisualSlot[] {
   }));
 }
 
+
+// ----------------------------------------------------------------
+// Tile-accurate cost helpers, used for tilesNeeded, not for visuals
+// ----------------------------------------------------------------
+
+// Computes the minimum number of physical tiles needed to reach `target`
+// complete triplets. Existing pairs cost 1 tile each to complete, existing
+// singles cost 2 tiles each, anything beyond that costs 3 tiles each for a
+// triplet built from nothing. Cheapest material is always used first.
+type TripletGroupPlan = {
+  tilesNeeded: number;
+  visual: VisualSlot[];
+  leftoverSingleIds: string[];
+};
+
+// Computes the cheapest path to `target` triplets, and builds the matching
+// visual at the same time, so the number and the picture can never disagree.
+// Existing pairs are extended first (1 tile, shown as 2 held + 1 missing of
+// the same real tile id), then existing singles (2 tiles, shown as 1 held +
+// 2 missing of the same id), then anything left over is built from nothing
+// and shown as the generic triplet template, since no tile identity exists
+// to point to in that case.
+function buildTripletGroupPlan(hand: Tile[], target: number): TripletGroupPlan {
+  const countMap = buildCountMap(hand);
+  const tripletIds = [...countMap.entries()].filter(([, c]) => c >= 3).map(([id]) => id);
+  const pairIds = [...countMap.entries()].filter(([, c]) => c === 2).map(([id]) => id);
+  const singleIds = [...countMap.entries()].filter(([, c]) => c === 1).map(([id]) => id);
+
+  let groupsNeeded = Math.max(0, target - tripletIds.length);
+  let tilesNeeded = 0;
+  const visual: VisualSlot[] = [];
+
+  for (const id of tripletIds) {
+    const tile = hand.find((t) => t.id === id)!;
+    visual.push(...buildHeldSlots([tile, tile, tile]));
+  }
+
+  const usedPairIds = pairIds.slice(0, groupsNeeded);
+  groupsNeeded -= usedPairIds.length;
+  tilesNeeded += usedPairIds.length * 1;
+  for (const id of usedPairIds) {
+    const tile = hand.find((t) => t.id === id)!;
+    visual.push(...buildHeldSlots([tile, tile]));
+    visual.push({ ref: { kind: "tile", tileId: id }, satisfied: false });
+  }
+
+  const usedSingleIds = singleIds.slice(0, groupsNeeded);
+  groupsNeeded -= usedSingleIds.length;
+  tilesNeeded += usedSingleIds.length * 2;
+  for (const id of usedSingleIds) {
+    const tile = hand.find((t) => t.id === id)!;
+    visual.push(...buildHeldSlots([tile]));
+    visual.push({ ref: { kind: "tile", tileId: id }, satisfied: false });
+    visual.push({ ref: { kind: "tile", tileId: id }, satisfied: false });
+  }
+
+  tilesNeeded += groupsNeeded * 3;
+  visual.push(...buildTemplateSlots("triplet", groupsNeeded));
+
+  const leftoverSingleIds = singleIds.filter((id) => !usedSingleIds.includes(id));
+
+  return { tilesNeeded, visual, leftoverSingleIds };
+}
+
+// Computes the minimum number of physical tiles needed to reach
+// `missingPairs` more unique pairs, beyond what already exists. Existing
+// singles cost 1 tile each to complete into a pair, anything beyond that
+// costs 2 tiles each for a pair built from a tile not yet in hand.
+function computeChiitoitsuTileCost(hand: Tile[], missingPairs: number): number {
+  const countMap = buildCountMap(hand);
+  const singles = [...countMap.values()].filter((c) => c === 1).length;
+
+  const fromSingles = Math.min(missingPairs, singles);
+  const fromScratch = missingPairs - fromSingles;
+  return fromSingles * 1 + fromScratch * 2;
+}
+
+
 // Builds visual slots for two copies of a v, v+1, v+2 sequence in one suit.
 // Used by Iipeiko, where a duplicate sequence is the goal.
 function buildIipeikoVisual(
@@ -369,7 +447,8 @@ function checkChiitoitsu(
     .filter(([, c]) => c >= 2)
     .map(([id]) => id);
   const uniquePairs = pairTileIds.length;
-  const tilesNeeded = 7 - uniquePairs;
+  const missingPairs = Math.max(0, 7 - uniquePairs);
+  const tilesNeeded = computeChiitoitsuTileCost(hand, missingPairs);
 
   const heldPairTiles = pairTileIds.flatMap((id) => {
     const tile = hand.find((t) => t.id === id)!;
@@ -377,10 +456,10 @@ function checkChiitoitsu(
   });
   const visual = [
     ...buildHeldSlots(heldPairTiles),
-    ...buildTemplateSlots("pair", tilesNeeded > 0 ? tilesNeeded : 0),
+    ...buildTemplateSlots("pair", missingPairs),
   ];
 
-  if (tilesNeeded <= 0) {
+  if (missingPairs <= 0) {
     return {
       possible: true,
       tilesNeeded: 0,
@@ -394,7 +473,7 @@ function checkChiitoitsu(
     tilesNeeded,
     gapDescription: `Has ${uniquePairs} pair${
       uniquePairs !== 1 ? "s" : ""
-    }. Needs ${tilesNeeded} more.`,
+    }. Needs ${missingPairs} more pair${missingPairs !== 1 ? "s" : ""} (${tilesNeeded} tile${tilesNeeded !== 1 ? "s" : ""}).`,
     visual,
   };
 }
@@ -701,29 +780,29 @@ function checkToitoi(
 ): CheckResult {
   const countMap = buildCountMap(hand);
   const tripletIds = [...countMap.entries()].filter(([, c]) => c >= 3).map(([id]) => id);
-  const singleIds = [...countMap.entries()].filter(([, c]) => c === 1).map(([id]) => id);
   const triplets = tripletIds.length;
-  const singles = singleIds.length;
 
   const heldTripletTiles = tripletIds.flatMap((id) => {
     const tile = hand.find((t) => t.id === id)!;
     return [tile, tile, tile];
   });
-  const singleTiles = singleIds.map((id) => hand.find((t) => t.id === id)!);
-  const visual = [
-    ...buildHeldSlots(heldTripletTiles),
-    ...buildTemplateSlots("triplet", Math.max(0, 4 - triplets)),
-    ...buildMissingSlots(singleTiles),
-  ];
 
   if (triplets >= 4) {
+    const allSingleIds = [...countMap.entries()].filter(([, c]) => c === 1).map(([id]) => id);
+    const singleTiles = allSingleIds.map((id) => hand.find((t) => t.id === id)!);
+    const visual = [...buildHeldSlots(heldTripletTiles), ...buildMissingSlots(singleTiles)];
     return { possible: true, tilesNeeded: 0, gapDescription: "Four triplets present. Hand satisfies Toitoi.", visual };
   }
-  const tilesNeeded = Math.max(4 - triplets, singles);
+
+  const plan = buildTripletGroupPlan(hand, 4);
+  const leftoverSingleTiles = plan.leftoverSingleIds.map((id) => hand.find((t) => t.id === id)!);
+  const visual = [...plan.visual, ...buildMissingSlots(leftoverSingleTiles)];
+  const leftover = plan.leftoverSingleIds.length;
+
   return {
     possible: true,
-    tilesNeeded,
-    gapDescription: `Has ${triplets} of 4 triplets. ${singles > 0 ? `${singles} singleton${singles !== 1 ? "s" : ""} need replacing.` : "Needs more triplets."}`,
+    tilesNeeded: plan.tilesNeeded,
+    gapDescription: `Has ${triplets} of 4 triplets. ${leftover > 0 ? `${leftover} singleton${leftover !== 1 ? "s" : ""} need replacing.` : "Needs more triplets."}`,
     visual,
   };
 }
@@ -739,19 +818,26 @@ function checkSuuankou(
   const tripletIds = [...countMap.entries()].filter(([, c]) => c >= 3).map(([id]) => id);
   const triplets = tripletIds.length;
 
-  const heldTripletTiles = tripletIds.flatMap((id) => {
-    const tile = hand.find((t) => t.id === id)!;
-    return [tile, tile, tile];
-  });
-  const visual = [
-    ...buildHeldSlots(heldTripletTiles),
-    ...buildTemplateSlots("triplet", Math.max(0, 4 - triplets)),
-  ];
-
   if (triplets >= 4) {
-    return { possible: true, tilesNeeded: 0, gapDescription: "Four concealed triplets. Hand satisfies Suuankou.", visual };
+    const heldTripletTiles = tripletIds.flatMap((id) => {
+      const tile = hand.find((t) => t.id === id)!;
+      return [tile, tile, tile];
+    });
+    return {
+      possible: true,
+      tilesNeeded: 0,
+      gapDescription: "Four concealed triplets. Hand satisfies Suuankou.",
+      visual: buildHeldSlots(heldTripletTiles),
+    };
   }
-  return { possible: true, tilesNeeded: 4 - triplets, gapDescription: `Has ${triplets} of 4 concealed triplets.`, visual };
+
+  const plan = buildTripletGroupPlan(hand, 4);
+  return {
+    possible: true,
+    tilesNeeded: plan.tilesNeeded,
+    gapDescription: `Has ${triplets} of 4 concealed triplets.`,
+    visual: plan.visual,
+  };
 }
 
 function checkSanankou(
@@ -763,19 +849,26 @@ function checkSanankou(
   const tripletIds = [...countMap.entries()].filter(([, c]) => c >= 3).map(([id]) => id);
   const triplets = tripletIds.length;
 
-  const heldTripletTiles = tripletIds.flatMap((id) => {
-    const tile = hand.find((t) => t.id === id)!;
-    return [tile, tile, tile];
-  });
-  const visual = [
-    ...buildHeldSlots(heldTripletTiles),
-    ...buildTemplateSlots("triplet", Math.max(0, 3 - triplets)),
-  ];
-
   if (triplets >= 3) {
-    return { possible: true, tilesNeeded: 0, gapDescription: `Has ${triplets} concealed triplets. Hand satisfies Sanankou.`, visual };
+    const heldTripletTiles = tripletIds.flatMap((id) => {
+      const tile = hand.find((t) => t.id === id)!;
+      return [tile, tile, tile];
+    });
+    return {
+      possible: true,
+      tilesNeeded: 0,
+      gapDescription: `Has ${triplets} concealed triplets. Hand satisfies Sanankou.`,
+      visual: buildHeldSlots(heldTripletTiles),
+    };
   }
-  return { possible: true, tilesNeeded: 3 - triplets, gapDescription: `Has ${triplets} of 3 needed concealed triplets.`, visual };
+
+  const plan = buildTripletGroupPlan(hand, 3);
+  return {
+    possible: true,
+    tilesNeeded: plan.tilesNeeded,
+    gapDescription: `Has ${triplets} of 3 needed concealed triplets.`,
+    visual: plan.visual,
+  };
 }
 
 function checkDaisangen(
