@@ -2,6 +2,7 @@ GoodToKnow:
  - Get a filetree: "tree /F > structure.txt"
  - Kebab-case is used for file names, CSS classes, and component names. Inside TypeScript object properties, camelCase is the default used.
  - Typescript: Remember to add "type" to more values.
+ - When it's compiled with "npm run build", it goes into the "dist" folder.
 
 Steps:
 
