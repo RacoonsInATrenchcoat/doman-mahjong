@@ -175,8 +175,8 @@ function computeChiitoitsuTileCost(hand: Tile[], missingPairs: number): number {
 
 
 // Builds visual slots for two copies of a v, v+1, v+2 sequence in one suit.
-// Used by Iipeiko, where a duplicate sequence is the goal.
-function buildIipeikoVisual(
+// Used by Iipeikou, where a duplicate sequence is the goal.
+function buildIipeikouVisual(
   hand: Tile[],
   suit: "man" | "pin" | "sou",
   v: number
@@ -210,8 +210,8 @@ function buildSanshokuDoujunVisual(hand: Tile[], v: number): VisualSlot[] {
 }
 
 // Builds visual slots for one full 1-9 run in one suit.
-// Used by Ittsu.
-function buildIttsuVisual(hand: Tile[], suit: "man" | "pin" | "sou"): VisualSlot[] {
+// Used by Ittsuu.
+function buildIttsuuVisual(hand: Tile[], suit: "man" | "pin" | "sou"): VisualSlot[] {
   const counts = getSuitCounts(hand, suit);
   return [1, 2, 3, 4, 5, 6, 7, 8, 9].map((v) => {
     const id = `${suit}-${v}`;
@@ -640,8 +640,22 @@ function checkHonitsu(
   const suitedTiles = hand.filter((t) => !isHonour(t));
 
   if (suitedTiles.length === 0) {
-    const visual = buildHeldSlots(honours);
-    return { possible: true, tilesNeeded: 0, gapDescription: "All tiles are honours. Hand satisfies Honitsu.", visual };
+    // Bug fix: an all-honour hand does NOT satisfy Honitsu. Honitsu
+    // requires exactly one suit present alongside honours, an all-honour
+    // hand belongs to Tsuuiisou instead. Since no suited tile exists yet
+    // to determine which suit to aim for, "man" is used as a pragmatic
+    // placeholder, the same kind of documented arbitrary choice already
+    // used for Kokushi's final duplicate tile back in Session 10.
+    const visual: VisualSlot[] = [
+      ...buildHeldSlots(honours),
+      { ref: { kind: "tile", tileId: "man-1" }, satisfied: false },
+    ];
+    return {
+      possible: true,
+      tilesNeeded: 1,
+      gapDescription: "All tiles are honours. Honitsu needs at least one suited tile, suit not yet determined.",
+      visual,
+    };
   }
 
   const suitCounts = new Map<string, number>();
@@ -1073,7 +1087,7 @@ function checkPinfu(
   };
 }
 
-function checkIipeiko(
+function checkIipeikou(
   hand: Tile[],
   _seatWind: string,
   _roundWind: string
@@ -1084,11 +1098,11 @@ function checkIipeiko(
     const counts = getSuitCounts(hand, suit);
     for (let v = 1; v <= 7; v++) {
       if (counts[v] >= 2 && counts[v + 1] >= 2 && counts[v + 2] >= 2) {
-        const visual = buildIipeikoVisual(hand, suit, v);
+        const visual = buildIipeikouVisual(hand, suit, v);
         return {
           possible: true,
           tilesNeeded: 0,
-          gapDescription: `Has two ${suit} ${v}-${v + 1}-${v + 2} sequences. Hand satisfies Iipeiko.`,
+          gapDescription: `Has two ${suit} ${v}-${v + 1}-${v + 2} sequences. Hand satisfies Iipeikou.`,
           visual,
         };
       }
@@ -1116,7 +1130,7 @@ function checkIipeiko(
     }
   }
 
-  const visual = buildIipeikoVisual(hand, bestSuit, bestV);
+  const visual = buildIipeikouVisual(hand, bestSuit, bestV);
   return { possible: true, tilesNeeded: bestTilesNeeded, gapDescription: bestDesc, visual };
 }
 
@@ -1165,7 +1179,7 @@ function checkSanshokuDoujun(
   };
 }
 
-function checkIttsu(
+function checkIttsuu(
   hand: Tile[],
   _seatWind: string,
   _roundWind: string
@@ -1176,11 +1190,11 @@ function checkIttsu(
     const counts = getSuitCounts(hand, suit);
     const allPresent = [1, 2, 3, 4, 5, 6, 7, 8, 9].every((v) => counts[v] >= 1);
     if (allPresent) {
-      const visual = buildIttsuVisual(hand, suit);
+      const visual = buildIttsuuVisual(hand, suit);
       return {
         possible: true,
         tilesNeeded: 0,
-        gapDescription: `Has 1-2-3, 4-5-6, 7-8-9 in ${suit}. Hand satisfies Ittsu.`,
+        gapDescription: `Has 1-2-3, 4-5-6, 7-8-9 in ${suit}. Hand satisfies Ittsuu.`,
         visual,
       };
     }
@@ -1197,7 +1211,7 @@ function checkIttsu(
     if (needed < bestTilesNeeded) { bestTilesNeeded = needed; bestSuit = suit; }
   }
 
-  const visual = buildIttsuVisual(hand, bestSuit);
+  const visual = buildIttsuuVisual(hand, bestSuit);
   return {
     possible: true,
     tilesNeeded: bestTilesNeeded,
@@ -1277,7 +1291,7 @@ function checkChuurenPoutou(
 export const HAND_CHECKERS: Record<string, CheckerFn> = {
   pinfu:             checkPinfu,
   tanyao:            checkTanyao,
-  iipeiko:           checkIipeiko,
+  iipeikou:           checkIipeikou,
   "yakuhai-white":   checkYakuhaiWhite,
   "yakuhai-green":   checkYakuhaiGreen,
   "yakuhai-red":     checkYakuhaiRed,
@@ -1285,7 +1299,7 @@ export const HAND_CHECKERS: Record<string, CheckerFn> = {
   "round-wind":      checkRoundWind,
   chiitoitsu:        checkChiitoitsu,
   "sanshoku-doujun": checkSanshokuDoujun,
-  ittsu:             checkIttsu,
+  ittsuu:             checkIttsuu,
   toitoi:            checkToitoi,
   sanankou:          checkSanankou,
   "sanshoku-doukou": checkSanshokuDoukou,

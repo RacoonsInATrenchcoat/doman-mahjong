@@ -23,9 +23,11 @@ function App() {
   const [roundWind, setRoundWind] = useState<WindValue>("east");
   const [sortMode, setSortMode] = useState<SortMode>("least-steps");
 
-
   const addTile = (tile: Tile) => {
-    setCurrentHand((prev) => [...prev, tile]);
+    setCurrentHand((prev) => {
+      if (prev.length >= 13) return prev;
+      return [...prev, tile];
+    });
   };
   //Adds a new tile, while pulling the previous state with it
 
@@ -37,12 +39,12 @@ function App() {
   const clearHand = () => {
     setCurrentHand([]);
   };
-//Used for full clearing the hand
-    const toggleResults = () => {
+  //Used for full clearing the hand
+  const toggleResults = () => {
     setIsResultsOpen((prev) => !prev);
   };
 
-const rawResults =
+  const rawResults =
     currentHand.length === 13
       ? ALL_HANDS.map((hand) => {
           const checker = HAND_CHECKERS[hand.id];
@@ -51,11 +53,20 @@ const rawResults =
         })
       : null;
 
-const results = rawResults === null ? null : sortResults(rawResults, sortMode);
-//Results and rawresults are separate, as the result is checked by sort-mode filter afterwards.
-//Technically it can be sorted within, but it's good code to sort things separately from the raw results.
+  // Hide yaku requiring 8 or more tiles. Chiitoitsu's proven worst case is
+  // exactly 7 tiles (see computeChiitoitsuTileCost), so nothing genuinely
+  // useful is ever hidden by this cutoff, Chiitoitsu itself always remains
+  // visible even in its own worst case, since the cutoff is <= 7, not < 7.
+  const filteredResults =
+    rawResults === null
+      ? null
+      : rawResults.filter((entry) => entry.result.tilesNeeded <= 7);
 
-return (
+  const results = filteredResults === null ? null : sortResults(filteredResults, sortMode);
+  //Results and rawresults are separate, as the result is checked by sort-mode filter afterwards.
+  //Technically it can be sorted within, but it's good code to sort things separately from the raw results.
+
+  return (
     <div className="app">
       <header className="app__header">
         <h1>Doman Mahjong Hand Checker</h1>

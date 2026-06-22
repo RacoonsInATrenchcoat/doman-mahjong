@@ -16,7 +16,6 @@ const WIND_OPTIONS: WindValue[] = ["east", "south", "west", "north"];
 const SORT_OPTIONS: { value: SortMode; label: string }[] = [
   { value: "least-steps", label: "Least steps" },
   { value: "most-han", label: "Most han" },
-  { value: "least-han", label: "Least han" },
 ];
 
 function SortControls({

@@ -8,12 +8,13 @@ type TilePickerProps = {
 
 function TilePicker({ currentHand, onTileClick }: TilePickerProps) {
   const suits = ["man", "pin", "sou", "wind", "dragon"] as const;
-//Define the filter options, same as setup on Tiles
+  const isHandFull = currentHand.length >= 13;
+  //Change here for max hand size, used for testing.
 
   const getTileCount = (tileId: string) => {
     return currentHand.filter((t) => t.id === tileId).length;
   };
-//Checks for duplicates, by seeing if we got the same ID multiple times.
+  //Checks for duplicates, aka. the same ID of a tile.
 
   return (
     <div className="tile-picker">
@@ -23,7 +24,7 @@ function TilePicker({ currentHand, onTileClick }: TilePickerProps) {
           <div className="tile-picker__tiles">
             {ALL_TILES.filter((tile) => tile.suit === suit).map((tile) => {
               const count = getTileCount(tile.id);
-              const isDisabled = count >= 4;
+              const isDisabled = count >= 4 || isHandFull;
               //This disallows more than 4 of the same tile to be picked.
               
               return (
