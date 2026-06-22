@@ -53,16 +53,7 @@ function App() {
         })
       : null;
 
-  // Hide yaku requiring 8 or more tiles. Chiitoitsu's proven worst case is
-  // exactly 7 tiles (see computeChiitoitsuTileCost), so nothing genuinely
-  // useful is ever hidden by this cutoff, Chiitoitsu itself always remains
-  // visible even in its own worst case, since the cutoff is <= 7, not < 7.
-  const filteredResults =
-    rawResults === null
-      ? null
-      : rawResults.filter((entry) => entry.result.tilesNeeded <= 7);
-
-  const results = filteredResults === null ? null : sortResults(filteredResults, sortMode);
+  const results = rawResults === null ? null : sortResults(rawResults, sortMode);
   //Results and rawresults are separate, as the result is checked by sort-mode filter afterwards.
   //Technically it can be sorted within, but it's good code to sort things separately from the raw results.
 

@@ -35,8 +35,9 @@ Consider yaku compatibility for grouping yakus. Rarely a hand only consists of o
 https://riichi.wiki/Yaku_compatibility
 Sorting needs to combine both criteria. When sorting by least steps, display first the higher yaku count; when sorting by yaku, display first the ones with least steps
 No need to display yakus if they're 7+ steps away (because in that scenario you can go for chiitoitsu)
+- Ignored, I rather have all information shown, including the Chiitoitsu.
 No need to display other yakus if you're 0 steps away from something
-- Done.
+- Done
 
 BUGS
 You can add more than 13 tiles to the hand
@@ -47,9 +48,11 @@ Honitsu detection is wrong (hand with all honors is wrongly detected as Honitsu)
 MINOR ISSUES
 If a yaku can only be obtained with a closed hand (or if it gives less han with an open hand), display it in the UI
 No need to order by least han
+- Done
 Instead of steps, display shanten count or tenpai
 https://riichi.wiki/Shanten
 Spelling: Iipeiko -> Iipeikou, Ittsu -> Ittsuu
+- Done
 
 NICE TO HAVE
 Option for using regular mahjong skin for the tiles
