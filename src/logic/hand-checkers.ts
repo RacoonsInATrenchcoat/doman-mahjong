@@ -1284,6 +1284,181 @@ function checkChuurenPoutou(
   };
 }
 
+function checkHonroutou(
+  hand: Tile[],
+  _seatWind: string,
+  _roundWind: string
+): CheckResult {
+  const valid = hand.filter((t) => isTerminalOrHonour(t));
+  const invalid = hand.filter((t) => !isTerminalOrHonour(t));
+  const visual = [...buildHeldSlots(valid), ...buildMissingSlots(invalid)];
+
+  if (invalid.length === 0) {
+    return { possible: true, tilesNeeded: 0, gapDescription: "All tiles are terminals or honours. Hand satisfies Honroutou.", visual };
+  }
+  return {
+    possible: true,
+    tilesNeeded: invalid.length,
+    gapDescription: `Replace ${invalid.length} simple tile${invalid.length !== 1 ? "s" : ""} with terminals or honours.`,
+    visual,
+  };
+}
+
+// Approximation, consistent with Iipeikou's own "best candidate" approach.
+// Finds the two cheapest distinct duplicated sequences without checking
+// whether their required tiles overlap with each other.
+function checkRyanpeikou(
+  hand: Tile[],
+  _seatWind: string,
+  _roundWind: string
+): CheckResult {
+  const suits = ["man", "pin", "sou"] as const;
+  type Candidate = { suit: "man" | "pin" | "sou"; v: number; cost: number };
+  const candidates: Candidate[] = [];
+
+  for (const suit of suits) {
+    const counts = getSuitCounts(hand, suit);
+    for (let v = 1; v <= 7; v++) {
+      const cost =
+        Math.max(0, 2 - counts[v]) +
+        Math.max(0, 2 - counts[v + 1]) +
+        Math.max(0, 2 - counts[v + 2]);
+      candidates.push({ suit, v, cost });
+    }
+  }
+
+candidates.sort((a, b) => a.cost - b.cost);
+  const first = candidates[0];
+  // A second candidate in a different suit never shares tiles with the
+  // first, so it is always safe. Within the same suit, two sequences only
+  // share no tiles if their starting values are more than 2 apart, since
+  // each sequence spans 3 consecutive values. v and v+3 (for example
+  // 1-2-3 and 4-5-6) do not overlap. v and v+2 (for example 1-2-3 and
+  // 3-4-5) do, since both need a value-3 tile.
+  const second = candidates.find(
+    (c) => c.suit !== first.suit || Math.abs(c.v - first.v) > 2
+  )!;
+
+  const tilesNeeded = first.cost + second.cost;
+  const visual = [
+    ...buildIipeikouVisual(hand, first.suit, first.v),
+    ...buildIipeikouVisual(hand, second.suit, second.v),
+  ];
+
+  if (tilesNeeded === 0) {
+    return {
+      possible: true,
+      tilesNeeded: 0,
+      gapDescription: `Has two ${first.suit} ${first.v}-${first.v + 1}-${first.v + 2} and two ${second.suit} ${second.v}-${second.v + 1}-${second.v + 2} sequences. Hand satisfies Ryanpeikou.`,
+      visual,
+    };
+  }
+  return {
+    possible: true,
+    tilesNeeded,
+    gapDescription: `Best candidates: two ${first.suit} ${first.v}-${first.v + 1}-${first.v + 2} and two ${second.suit} ${second.v}-${second.v + 1}-${second.v + 2}. Needs ${tilesNeeded} more tile${tilesNeeded !== 1 ? "s" : ""}.`,
+    visual,
+  };
+}
+
+// Values 3 and 7 sit next to a terminal in 1-2-3 / 7-8-9 sequences, exactly
+// like 2 and 8 do, so all four are included here, correcting an earlier
+// oversight that only included 2 and 8.
+//
+// A run of 3 or more identical copies of one of these four values is
+// treated as a forced triplet rather than separate edge sequences. Fitting
+// multiple full edge sequences for the same value would require far more
+// supporting terminal tiles than a 13-tile hand has room for (for example,
+// three man-2 tiles used in three separate man 1-2-3 sequences would also
+// need three man-1 and three man-3 tiles, 9 tiles total, leaving only 4
+// for the rest of a complete hand), so this is a safe simplification for
+// this hand size, not a guess.
+//
+// The remaining known gap, not fixed here: the pair specifically must also
+// touch a terminal or honour, and this function has no way to know which
+// tile is acting as the pair without real decomposition. Deferred to
+// Session 16.
+function partitionChantaTiles(
+  hand: Tile[],
+  allowHonours: boolean
+): { compatible: Tile[]; incompatible: Tile[] } {
+  const countMap = buildCountMap(hand);
+  const compatible: Tile[] = [];
+  const incompatible: Tile[] = [];
+
+  for (const tile of hand) {
+    if (isHonour(tile)) {
+      (allowHonours ? compatible : incompatible).push(tile);
+      continue;
+    }
+    if (isTerminal(tile)) {
+      compatible.push(tile);
+      continue;
+    }
+
+    const isEdgeAdjacent =
+      typeof tile.value === "number" &&
+      (tile.value === 2 || tile.value === 3 || tile.value === 7 || tile.value === 8);
+    const isForcedTriplet = (countMap.get(tile.id) ?? 0) >= 3;
+
+    if (isEdgeAdjacent && !isForcedTriplet) {
+      compatible.push(tile);
+    } else {
+      incompatible.push(tile);
+    }
+  }
+
+  return { compatible, incompatible };
+}
+
+function checkChanta(
+  hand: Tile[],
+  _seatWind: string,
+  _roundWind: string
+): CheckResult {
+  const { compatible, incompatible } = partitionChantaTiles(hand, true);
+  const visual = [...buildHeldSlots(compatible), ...buildMissingSlots(incompatible)];
+
+  if (incompatible.length === 0) {
+    return {
+      possible: true,
+      tilesNeeded: 0,
+      gapDescription: "Every tile can belong to a terminal or honour set. Hand may satisfy Chanta.",
+      visual,
+    };
+  }
+  return {
+    possible: true,
+    tilesNeeded: incompatible.length,
+    gapDescription: `Has ${incompatible.length} tile${incompatible.length !== 1 ? "s" : ""} that cannot touch a terminal (values 4 to 6, or 3 or more identical copies of an edge value).`,
+    visual,
+  };
+}
+
+function checkJunchan(
+  hand: Tile[],
+  _seatWind: string,
+  _roundWind: string
+): CheckResult {
+  const { compatible, incompatible } = partitionChantaTiles(hand, false);
+  const visual = [...buildHeldSlots(compatible), ...buildMissingSlots(incompatible)];
+
+  if (incompatible.length === 0) {
+    return {
+      possible: true,
+      tilesNeeded: 0,
+      gapDescription: "Every tile is a terminal or can touch one, with no honours. Hand may satisfy Junchan.",
+      visual,
+    };
+  }
+  return {
+    possible: true,
+    tilesNeeded: incompatible.length,
+    gapDescription: `Has ${incompatible.length} honour or non-edge tile${incompatible.length !== 1 ? "s" : ""}. Junchan allows no honours.`,
+    visual,
+  };
+}
+
 // ----------------------------------------------------------------
 // Checker map: one entry per hand id defined in hands.ts
 // ----------------------------------------------------------------
@@ -1291,7 +1466,8 @@ function checkChuurenPoutou(
 export const HAND_CHECKERS: Record<string, CheckerFn> = {
   pinfu:             checkPinfu,
   tanyao:            checkTanyao,
-  iipeikou:           checkIipeikou,
+  iipeikou:          checkIipeikou,
+  ryanpeikou:        checkRyanpeikou,
   "yakuhai-white":   checkYakuhaiWhite,
   "yakuhai-green":   checkYakuhaiGreen,
   "yakuhai-red":     checkYakuhaiRed,
@@ -1299,12 +1475,14 @@ export const HAND_CHECKERS: Record<string, CheckerFn> = {
   "round-wind":      checkRoundWind,
   chiitoitsu:        checkChiitoitsu,
   "sanshoku-doujun": checkSanshokuDoujun,
-  ittsuu:             checkIttsuu,
+  ittsuu:            checkIttsuu,
   toitoi:            checkToitoi,
   sanankou:          checkSanankou,
   "sanshoku-doukou": checkSanshokuDoukou,
   shousangen:        checkShousangen,
   honitsu:           checkHonitsu,
+  chanta:            checkChanta,
+  junchan:           checkJunchan,
   chinitsu:          checkChinitsu,
   kokushi:           checkKokushi,
   suuankou:          checkSuuankou,
@@ -1313,6 +1491,7 @@ export const HAND_CHECKERS: Record<string, CheckerFn> = {
   daisuushi:         checkDaisuushi,
   tsuuiisou:         checkTsuuiisou,
   chinroutou:        checkChinroutou,
+  honroutou:         checkHonroutou,
   ryuuiisou:         checkRyuuiisou,
   "chuuren-poutou":  checkChuurenPoutou,
 };
