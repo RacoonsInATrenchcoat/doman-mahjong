@@ -37,6 +37,11 @@ import type { VisualSlot } from "../hand-checkers";
 // this just carries the information for now.
 export type ShantenSlot = VisualSlot & { contributing?: boolean };
 
+export type ShantenGroup = {
+  label: string;
+  slots: ShantenSlot[];
+};
+
 export type StandardResult = {
   distance: number;
   // One or more tied-best pictures. When several decompositions reach the

@@ -11,6 +11,7 @@ import TilePicker from "./components/tile-picker/tile-picker";
 import CurrentHand from "./components/current-hand/current-hand";
 import ResultsList from "./components/results-list/results-list";
 import SortControls from "./components/sort-controls/sort-controls";
+import ShantenPanel from "./components/shanten-panel/shanten-panel";
 
 type WindValue = "east" | "south" | "west" | "north";
 //duplication from sort-controls.tsx, will need cleanup leater
@@ -57,12 +58,15 @@ function App() {
   //Results and rawresults are separate, as the result is checked by sort-mode filter afterwards.
   //Technically it can be sorted within, but it's good code to sort things separately from the raw results.
 
+// Temporary testing, Shanten verification only for debugging the results.
+/*
 if (currentHand.length === 13) {
-  // Temporary, Session 14 verification only, removed once the real panel exists.
-  import("./logic/shanten/standard").then(({ calculateStandardShanten }) => {
-    console.log(calculateStandardShanten(currentHand));
+  import("./logic/shanten/index").then(({ calculateShanten }) => {
+  console.log("Shanten:", calculateShanten (currentHand));
   });
+
 }
+*/
 
   return (
     <div className="app">
@@ -73,6 +77,7 @@ if (currentHand.length === 13) {
       <div className="app__main">
         <TilePicker currentHand={currentHand} onTileClick={addTile} />
         <div className="app__results-panel">
+          <ShantenPanel currentHand={currentHand} />
           <SortControls
             seatWind={seatWind}
             roundWind={roundWind}
