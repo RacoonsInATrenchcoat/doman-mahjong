@@ -24,9 +24,12 @@ https://riichi.wiki/Pinfu#Definition
 https://riichi.wiki/Fu
 Some yaku are missing: Ryanpeikou, honroutou, chanta, junchan
 https://riichi.wiki/Ryanpeikou
+- Done
 https://riichi.wiki/Honroutou
 https://riichi.wiki/Chanta
+- Done
 https://riichi.wiki/Junchantaiyaochuu
+- Done
 Wait dependent yaku are missing (Chuuren Kyuumen, Kokushi Jusanmen, Suuankou Tanki)
 https://riichi.wiki/Chuuren_poutou#Nine_tile_wait
 https://riichi.wiki/Kokushi_musou#Kokushi_musou_13-way_wait

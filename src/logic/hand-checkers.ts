@@ -45,7 +45,7 @@ export const TEMPLATE_IMAGES: Record<TemplateId, string> = {
 // Builds `total` visual slots of one exact tile id, with `haveCount` of
 // them marked satisfied and the rest marked unsatisfied.
 // Example: buildTileSlots("dragon-white", 1, 3) for "has 1 of 3 White Dragon".
-function buildTileSlots(
+export function buildTileSlots(
   tileId: string,
   haveCount: number,
   total: number
@@ -62,7 +62,7 @@ function buildTileSlots(
 
 // Builds visual slots from an array of real tiles already in hand, all
 // marked satisfied. Used when every tile shown genuinely exists in the hand.
-function buildHeldSlots(tiles: Tile[]): VisualSlot[] {
+export function buildHeldSlots(tiles: Tile[]): VisualSlot[] {
   return tiles.map((tile) => ({
     ref: { kind: "tile", tileId: tile.id },
     satisfied: true,
@@ -72,7 +72,7 @@ function buildHeldSlots(tiles: Tile[]): VisualSlot[] {
 // Builds `count` generic template slots, all marked unsatisfied.
 // Used only for the four yaku that deliberately do not resolve to a
 // specific tile: Chiitoitsu, Pinfu's pair, Toitoi, Sanankou, Suuankou.
-function buildTemplateSlots(
+export function buildTemplateSlots(
   template: TemplateId,
   count: number
 ): VisualSlot[] {
@@ -164,7 +164,7 @@ function buildTripletGroupPlan(hand: Tile[], target: number): TripletGroupPlan {
 // `missingPairs` more unique pairs, beyond what already exists. Existing
 // singles cost 1 tile each to complete into a pair, anything beyond that
 // costs 2 tiles each for a pair built from a tile not yet in hand.
-function computeChiitoitsuTileCost(hand: Tile[], missingPairs: number): number {
+export function computeChiitoitsuTileCost(hand: Tile[], missingPairs: number): number {
   const countMap = buildCountMap(hand);
   const singles = [...countMap.values()].filter((c) => c === 1).length;
 
@@ -479,7 +479,7 @@ function checkChiitoitsu(
 }
 
 // KOKUSHI MUSOU: one each of all 13 terminal and honour tiles, plus one duplicate.
-const KOKUSHI_TILES = [
+export const KOKUSHI_TILES = [
   "man-1", "man-9",
   "pin-1", "pin-9",
   "sou-1", "sou-9",

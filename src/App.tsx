@@ -57,6 +57,13 @@ function App() {
   //Results and rawresults are separate, as the result is checked by sort-mode filter afterwards.
   //Technically it can be sorted within, but it's good code to sort things separately from the raw results.
 
+if (currentHand.length === 13) {
+  // Temporary, Session 14 verification only, removed once the real panel exists.
+  import("./logic/shanten/standard").then(({ calculateStandardShanten }) => {
+    console.log(calculateStandardShanten(currentHand));
+  });
+}
+
   return (
     <div className="app">
       <header className="app__header">
