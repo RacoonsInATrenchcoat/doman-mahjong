@@ -1,23 +1,3 @@
-// Calculates shanten distance for the Standard shape: 4 sets plus 1 pair.
-// This is the hardest of the three shapes, since the same 13 tiles can be
-// grouped multiple different ways, and different groupings can yield
-// different distances. The search below tries the reasonable groupings
-// and keeps whichever is best, the same backtracking spirit as
-// tryExtractSets in hand-checkers.ts, extended to also recognise partial
-// groups (taatsu, one tile from a complete set), not only complete ones.
-//
-// This is a first pass, intended to be validated against hand-constructed
-// test hands rather than assumed correct, the same way every other piece
-// of tricky logic in this project has been handled. Two known, deliberate
-// simplifications:
-//   1. When a suit holds more than one pair-shaped group, only the first
-//      is tracked as a possible "reserved pair" candidate, ties between
-//      multiple equally good pairs are not separately explored.
-//   2. The one tie this file does explicitly check is the case discussed
-//      directly: a held pair can either be reserved as the hand's pair,
-//      or spent instead as a taatsu toward a 4th triplet. Both are tried,
-//      and whichever gives the better picture at the same distance wins.
-
 import type { Tile } from "../../data/tiles";
 import {
   buildCountMap,
@@ -28,13 +8,6 @@ import {
 } from "../hand-checkers";
 import type { VisualSlot } from "../hand-checkers";
 
-// A leftover tile is a real, physically held tile that did not match any
-// set, taatsu, or pair in the chosen decomposition, contributing nothing
-// toward the shape. contributing defaults to true via omission, so every
-// existing held, missing, and template slot needs no change at all, only
-// leftover tiles explicitly set this to false. Styling for this (the
-// agreed dimmer border) is added once the real panel component exists,
-// this just carries the information for now.
 export type ShantenSlot = VisualSlot & { contributing?: boolean };
 
 export type ShantenGroup = {
@@ -44,16 +17,12 @@ export type ShantenGroup = {
 
 export type StandardResult = {
   distance: number;
-  // One or more tied-best pictures. When several decompositions reach the
-  // same minimal distance, the one with fewest missing slots is listed
-  // first, per the agreed tie-break rule.
-  decompositions: ShantenSlot[][];
+  decompositions: ShantenGroup[][];
 };
 
 type Group = {
   kind: "set" | "taatsu" | "pair";
   tiles: Tile[];
-  // The specific tile id that would complete a taatsu or pair, when known.
   missingTileId?: string;
 };
 
@@ -61,12 +30,10 @@ function find(hand: Tile[], id: string): Tile {
   return hand.find((t) => t.id === id)!;
 }
 
-// Searches one suit's value counts for the best combination of complete
-// sets and taatsu. At the first remaining value, tries a complete triplet,
-// a complete sequence, a held pair, a two-sided or closed taatsu, or
-// skipping the tile entirely as an isolated single, recursing through
-// whichever choice scores best. Score is 2 per complete set, 1 per taatsu
-// or pair, matching how much each contributes to reducing distance.
+// Unchanged from the previously verified version: tries a complete
+// triplet, a complete sequence, a held pair, a two-sided or closed
+// taatsu, or skipping the tile entirely, recursing through whichever
+// choice scores best.
 function searchSuit(hand: Tile[], suit: "man" | "pin" | "sou") {
   const counts = getSuitCounts(hand, suit);
 
@@ -88,8 +55,7 @@ function searchSuit(hand: Tile[], suit: "man" | "pin" | "sou") {
     }
 
     if (counts[i] >= 3) {
-      const id = `${suit}-${i}`;
-      const t = find(hand, id);
+      const t = find(hand, `${suit}-${i}`);
       tryOption([i, i, i], { kind: "set", tiles: [t, t, t] }, 2);
     }
     if (i <= 7 && counts[i + 1] > 0 && counts[i + 2] > 0) {
@@ -100,14 +66,10 @@ function searchSuit(hand: Tile[], suit: "man" | "pin" | "sou") {
       );
     }
     if (counts[i] >= 2) {
-      const id = `${suit}-${i}`;
-      const t = find(hand, id);
-      tryOption([i, i], { kind: "pair", tiles: [t, t], missingTileId: id }, 1);
+      const t = find(hand, `${suit}-${i}`);
+      tryOption([i, i], { kind: "pair", tiles: [t, t], missingTileId: `${suit}-${i}` }, 1);
     }
     if (i <= 8 && counts[i + 1] > 0) {
-      // Ryanmen (two-sided wait). Either i-1 or i+2 would complete it, one
-      // representative tile is shown, the same "show one example" approach
-      // already used for Sanankou's tied pairs.
       const missing = i - 1 >= 1 ? `${suit}-${i - 1}` : `${suit}-${i + 2}`;
       tryOption(
         [i, i + 1],
@@ -130,9 +92,6 @@ function searchSuit(hand: Tile[], suit: "man" | "pin" | "sou") {
   return recurse(counts).groups;
 }
 
-// Honours have no sequences, so this is simple counting: 3 or more of one
-// honour is always a complete triplet (never worth splitting), exactly 2
-// is a pair candidate, exactly 1 contributes nothing on its own.
 function searchHonours(hand: Tile[]): Group[] {
   const honourTiles = hand.filter((t) => isHonour(t));
   const countMap = buildCountMap(honourTiles);
@@ -150,8 +109,28 @@ function searchHonours(hand: Tile[]): Group[] {
   return groups;
 }
 
-// Tiles physically in hand that the chosen groups never touched. These
-// are real and held, simply not contributing to the closest shape found.
+// New: orders a sequence-shaped taatsu's two held tiles and one missing
+// tile by true numeric value, so a missing lower neighbour correctly
+// shows before the held tiles rather than always trailing after them.
+function buildSequenceSlots(heldTiles: Tile[], missingTileId: string): ShantenSlot[] {
+  const missingValue = Number(missingTileId.split("-")[1]);
+  const items = heldTiles.map((t) => ({
+    value: t.value as number,
+    slot: { ref: { kind: "tile" as const, tileId: t.id }, satisfied: true },
+  }));
+  items.push({
+    value: missingValue,
+    slot: { ref: { kind: "tile" as const, tileId: missingTileId }, satisfied: false },
+  });
+  items.sort((a, b) => a.value - b.value);
+  return items.map((i) => i.slot);
+}
+
+function isTriplet(group: Group): boolean {
+  return group.tiles[0].id === group.tiles[1].id;
+}
+
+// Unchanged accounting logic from the previously verified version.
 function computeLeftover(hand: Tile[], usedGroups: Group[]): Map<string, number> {
   const handCounts = buildCountMap(hand);
   const usedCounts = new Map<string, number>();
@@ -192,55 +171,66 @@ export function calculateStandardShanten(hand: Tile[]): StandardResult {
     const setSlotsAvailable = Math.max(0, 4 - sets.length);
     const usedTaatsu = remainingPartials.slice(0, setSlotsAvailable);
 
-const completeSets = sets.length;
+    const completeSets = sets.length;
     const taatsuCount = usedTaatsu.length;
     const hasPair = pair !== null;
-    // True shanten, tenpai = 0, matching standard Mahjong convention and
-    // the riichi wiki definition the original feedback referenced. This
-    // is deliberately one lower than "tiles needed to win," which is a
-    // separate, already-existing concept elsewhere in the app.
     const distance = (4 - completeSets) * 2 - taatsuCount - (hasPair ? 1 : 0);
 
-    const visual: ShantenSlot[] = [];
-    for (const g of sets) visual.push(...buildHeldSlots(g.tiles));
+    const groups: ShantenGroup[] = [];
+
+    for (const g of sets) {
+      groups.push({
+        label: isTriplet(g) ? "Triplet" : "Sequence",
+        slots: buildHeldSlots(g.tiles),
+      });
+    }
+
     for (const g of usedTaatsu) {
-      visual.push(...buildHeldSlots(g.tiles));
-      if (g.missingTileId) {
-        visual.push({ ref: { kind: "tile", tileId: g.missingTileId }, satisfied: false });
+      if (g.kind === "pair") {
+        groups.push({
+          label: "Triplet",
+          slots: [
+            ...buildHeldSlots(g.tiles),
+            { ref: { kind: "tile", tileId: g.missingTileId! }, satisfied: false },
+          ],
+        });
+      } else {
+        groups.push({ label: "Sequence", slots: buildSequenceSlots(g.tiles, g.missingTileId!) });
       }
     }
-    const emptySetSlots = Math.max(0, 4 - completeSets - taatsuCount);
-    visual.push(...buildTemplateSlots("triplet", emptySetSlots));
 
-if (pair) {
-      visual.push(...buildHeldSlots(pair.tiles));
-    } else {
-      visual.push(...buildTemplateSlots("pair", 1));
+    const emptySetSlots = Math.max(0, 4 - completeSets - taatsuCount);
+    for (let i = 0; i < emptySetSlots; i++) {
+      groups.push({ label: "Any", slots: buildTemplateSlots("triplet", 1) });
     }
 
-    // Account for every remaining physical tile the chosen groups never
-    // touched, real and held, but not contributing to this shape.
+    if (pair) {
+      groups.push({ label: "Pair", slots: buildHeldSlots(pair.tiles) });
+    } else {
+      groups.push({ label: "Pair", slots: buildTemplateSlots("pair", 1) });
+    }
+
     const usedGroups = [...sets, ...usedTaatsu, ...(pair ? [pair] : [])];
     const leftover = computeLeftover(hand, usedGroups);
+    const leftoverSlots: ShantenSlot[] = [];
     for (const [id, count] of leftover.entries()) {
       for (let i = 0; i < count; i++) {
-        visual.push({ ref: { kind: "tile", tileId: id }, satisfied: true, contributing: false });
+        leftoverSlots.push({ ref: { kind: "tile", tileId: id }, satisfied: true, contributing: false });
       }
     }
+    if (leftoverSlots.length > 0) groups.push({ label: "Unused", slots: leftoverSlots });
 
-    return { distance, visual };
+    return { distance, groups };
   }
 
   const builds = pairCandidates.length > 0 ? [build(true), build(false)] : [build(true)];
   const bestDistance = Math.min(...builds.map((b) => b.distance));
   const tied = builds.filter((b) => b.distance === bestDistance);
-  tied.sort(
-    (a, b) =>
-      a.visual.filter((s) => !s.satisfied).length - b.visual.filter((s) => !s.satisfied).length
-  );
+  tied.sort((a, b) => {
+    const missingA = a.groups.flatMap((g) => g.slots).filter((s) => !s.satisfied).length;
+    const missingB = b.groups.flatMap((g) => g.slots).filter((s) => !s.satisfied).length;
+    return missingA - missingB;
+  });
 
-  return {
-    distance: bestDistance,
-    decompositions: tied.map((b) => b.visual),
-  };
+  return { distance: bestDistance, decompositions: tied.map((b) => b.groups) };
 }

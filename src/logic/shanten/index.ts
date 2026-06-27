@@ -2,26 +2,22 @@ import type { Tile } from "../../data/tiles";
 import { calculateStandardShanten } from "./standard";
 import { calculateChiitoitsuShanten } from "./chiitoitsu";
 import { calculateKokushiShanten } from "./kokushi";
-import type { ShantenSlot } from "./standard";
+import type { ShantenGroup } from "./standard";
 
-export type { ShantenSlot } from "./standard";
+export type { ShantenSlot, ShantenGroup } from "./standard";
 
 export type ShapeName = "standard" | "chiitoitsu" | "kokushi";
 
 export type ShapeResult = {
   shape: ShapeName;
   distance: number;
-  decompositions: ShantenSlot[][];
+  decompositions: ShantenGroup[][];
 };
 
 export type ShantenResult = {
   standard: ShapeResult;
   chiitoitsu: ShapeResult;
   kokushi: ShapeResult;
-  // The shape to show by default: lowest distance wins, ties broken by
-  // priority order Standard, then Chiitoitsu, then Kokushi, matching the
-  // real-world frequency of each shape, as agreed during the panel's
-  // design discussion.
   defaultShape: ShapeName;
 };
 

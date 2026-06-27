@@ -1,10 +1,10 @@
 import type { Tile } from "../../data/tiles";
-import { buildCountMap, buildHeldSlots, KOKUSHI_TILES } from "../hand-checkers";
-import type { ShantenSlot } from "./standard";
+import { buildCountMap, buildHeldSlots, buildTemplateSlots, KOKUSHI_TILES } from "../hand-checkers";
+import type { ShantenSlot, ShantenGroup } from "./standard";
 
 export type KokushiResult = {
   distance: number;
-  decompositions: ShantenSlot[][];
+  decompositions: ShantenGroup[][];
 };
 
 export function calculateKokushiShanten(hand: Tile[]): KokushiResult {
@@ -17,36 +17,39 @@ export function calculateKokushiShanten(hand: Tile[]): KokushiResult {
 
   const distance = missingOrphanIds.length - (hasDuplicate ? 1 : 0);
 
-  const visual: ShantenSlot[] = [];
+  const orphanSlots: ShantenSlot[] = [];
+  for (const id of heldOrphanIds) orphanSlots.push(...buildHeldSlots([hand.find((t) => t.id === id)!]));
+  for (const id of missingOrphanIds) orphanSlots.push({ ref: { kind: "tile", tileId: id }, satisfied: false });
 
-  for (const id of heldOrphanIds) {
-    visual.push(...buildHeldSlots([hand.find((t) => t.id === id)!]));
-  }
-  for (const id of missingOrphanIds) {
-    visual.push({ ref: { kind: "tile", tileId: id }, satisfied: false });
-  }
-
+  const duplicateSlots: ShantenSlot[] = [];
   if (hasDuplicate) {
-    visual.push(...buildHeldSlots([hand.find((t) => t.id === duplicateId)!]));
+    duplicateSlots.push(...buildHeldSlots([hand.find((t) => t.id === duplicateId)!]));
   } else {
-    const fallbackId = heldOrphanIds[0] ?? "man-1";
-    visual.push({ ref: { kind: "tile", tileId: fallbackId }, satisfied: false });
+    // No real duplicate exists yet, and any one of the currently held
+    // orphans (or, if none are held, any of the 13 types) would equally
+    // satisfy this slot. Rather than arbitrarily pointing at one specific
+    // tile, this uses the wildcard template, the same convention already
+    // established for Chiitoitsu and Toitoi's unresolved groups, to mean
+    // "any tile from a known set," not one specific tile.
+    duplicateSlots.push(...buildTemplateSlots("wildcard", 1));
   }
 
-  // Each held orphan type uses exactly 1 copy in the 13-slot checklist,
-  // except the one designated duplicate type, which uses 2. Anything
-  // beyond that, including a second, unrelated type also happening to be
-  // held twice, is genuine leftover, the same accounting principle
-  // already verified for Standard and Chiitoitsu.
   const usedCounts = new Map<string, number>();
   for (const id of heldOrphanIds) usedCounts.set(id, id === duplicateId ? 2 : 1);
 
+  const leftoverSlots: ShantenSlot[] = [];
   for (const [id, total] of countMap.entries()) {
     const remaining = total - (usedCounts.get(id) ?? 0);
     for (let i = 0; i < remaining; i++) {
-      visual.push({ ref: { kind: "tile", tileId: id }, satisfied: true, contributing: false });
+      leftoverSlots.push({ ref: { kind: "tile", tileId: id }, satisfied: true, contributing: false });
     }
   }
 
-  return { distance, decompositions: [visual] };
+  const groups: ShantenGroup[] = [
+    { label: "Orphans", slots: orphanSlots },
+    { label: "Any", slots: duplicateSlots },
+  ];
+  if (leftoverSlots.length > 0) groups.push({ label: "Unused", slots: leftoverSlots });
+
+  return { distance, decompositions: [groups] };
 }

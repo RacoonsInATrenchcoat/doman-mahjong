@@ -10,7 +10,8 @@ export type TemplateId =
   | "straight"
   | "honour"
   | "non-honour"
-  | "terminal";
+  | "terminal"
+  | "wildcard";
 // Defines the types of values used, checks that they can only be these.
 
 export type VisualTileRef =
@@ -36,6 +37,7 @@ export const TEMPLATE_IMAGES: Record<TemplateId, string> = {
   honour: "/templates/honour.gif",
   "non-honour": "/templates/non-honour.gif",
   terminal: "/templates/terminal.gif",
+  wildcard: "/templates/wildcard.png",
 };
 
 // ----------------------------------------------------------------

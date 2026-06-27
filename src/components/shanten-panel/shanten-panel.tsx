@@ -2,16 +2,14 @@ import { useState, useEffect } from "react";
 import type { Tile } from "../../data/tiles";
 import { getTileImagePath } from "../../data/tiles";
 import { TEMPLATE_IMAGES } from "../../logic/hand-checkers";
-import type { ShapeName, ShantenResult, ShapeResult, ShantenSlot } from "../../logic/shanten";
+import type { ShapeName, ShantenResult, ShapeResult, ShantenSlot, ShantenGroup } from "../../logic/shanten";
 
 type ShantenPanelProps = {
   currentHand: Tile[];
 };
 
 function getSlotImagePath(slot: ShantenSlot): string {
-  return slot.ref.kind === "tile"
-    ? getTileImagePath(slot.ref.tileId)
-    : TEMPLATE_IMAGES[slot.ref.template];
+  return slot.ref.kind === "tile" ? getTileImagePath(slot.ref.tileId) : TEMPLATE_IMAGES[slot.ref.template];
 }
 
 function getSlotAlt(slot: ShantenSlot): string {
@@ -58,9 +56,8 @@ function ShantenPanel({ currentHand }: ShantenPanelProps) {
 
   const shapes: ShapeName[] = ["standard", "chiitoitsu", "kokushi"];
   const active: ShapeResult = result[selectedShape];
-  const visual = active.decompositions[0];
+  const groups: ShantenGroup[] = active.decompositions[0];
 
- 
   return (
     <div className="shanten-panel">
       <div className="shanten-panel__header">
@@ -77,14 +74,21 @@ function ShantenPanel({ currentHand }: ShantenPanelProps) {
         ))}
       </div>
 
-      <div className="shanten-panel__tiles">
-        {visual.map((slot, index) => (
-          <img
-            key={index}
-            src={getSlotImagePath(slot)}
-            alt={getSlotAlt(slot)}
-            className={getSlotClass(slot)}
-          />
+      <div className="shanten-panel__groups">
+        {groups.map((group, index) => (
+          <div key={index} className="shanten-panel__group">
+            <span className="shanten-panel__group-label">{group.label}</span>
+            <div className="shanten-panel__group-tiles">
+              {group.slots.map((slot, slotIndex) => (
+                <img
+                  key={slotIndex}
+                  src={getSlotImagePath(slot)}
+                  alt={getSlotAlt(slot)}
+                  className={getSlotClass(slot)}
+                />
+              ))}
+            </div>
+          </div>
         ))}
       </div>
 
@@ -94,7 +98,5 @@ function ShantenPanel({ currentHand }: ShantenPanelProps) {
     </div>
   );
 }
-
-
 
 export default ShantenPanel;
