@@ -1,103 +1,54 @@
 import type { Tile } from "../data/tiles";
+import {
+  isHonour,
+  isTerminal,
+  isSimple,
+  isTerminalOrHonour,
+  buildCountMap,
+  getSuitCounts,
+  buildTileSlots,
+  buildHeldSlots,
+  buildMissingSlots,
+  buildTemplateSlots,
+  computeChiitoitsuTileCost,
+  KOKUSHI_TILES,
+  TEMPLATE_IMAGES,
+  classifySequenceWait,
+} from "./tile-utils";
+import type { TemplateId, VisualSlot } from "./tile-utils";
+import { calculateStandardShanten } from "./shanten/standard";
+import type { ShantenGroup } from "./shanten/standard";
+
+// Re-exported so existing imports elsewhere in the project (results-list.tsx,
+// shanten-panel.tsx) continue to work unchanged, even though these now
+// live in tile-utils.ts. Moved there in Session 16 to resolve a circular
+// import: the shanten module already depended on these helpers, and
+// checkPinfu needs to depend on the shanten module, which would have
+// created a cycle if both stayed in this file.
+export type { TemplateId, VisualSlot } from "./tile-utils";
+export { TEMPLATE_IMAGES } from "./tile-utils";
 
 // ----------------------------------------------------------------
 // Types
-
-
-export type TemplateId =
-  | "pair"
-  | "triplet"
-  | "straight"
-  | "honour"
-  | "non-honour"
-  | "terminal"
-  | "wildcard";
-// Defines the types of values used, checks that they can only be these.
-
-export type VisualTileRef =
-  | { kind: "tile"; tileId: string }
-  | { kind: "template"; template: TemplateId };
-
-export type VisualSlot = {
-  ref: VisualTileRef;
-  satisfied: boolean;
-};
+// ----------------------------------------------------------------
 
 export type CheckResult = {
   possible: boolean;
   tilesNeeded: number;
   gapDescription: string;
   visual: VisualSlot[];
+  waitUpgrade?: { name: string; hanValue: number; gapDescription: string };
 };
 
-export const TEMPLATE_IMAGES: Record<TemplateId, string> = {
-  pair: "/templates/pair.png",
-  triplet: "/templates/triplet.png",
-  straight: "/templates/straight.png",
-  honour: "/templates/honour.gif",
-  "non-honour": "/templates/non-honour.gif",
-  terminal: "/templates/terminal.gif",
-  wildcard: "/templates/wildcard.png",
-};
+export type CheckerFn = (
+  hand: Tile[],
+  seatWind: string,
+  roundWind: string
+) => CheckResult;
 
 // ----------------------------------------------------------------
-// Visual helper functions
+// Individual hand checkers
 // ----------------------------------------------------------------
-
-// Builds `total` visual slots of one exact tile id, with `haveCount` of
-// them marked satisfied and the rest marked unsatisfied.
-// Example: buildTileSlots("dragon-white", 1, 3) for "has 1 of 3 White Dragon".
-export function buildTileSlots(
-  tileId: string,
-  haveCount: number,
-  total: number
-): VisualSlot[] {
-  const slots: VisualSlot[] = [];
-  for (let i = 0; i < total; i++) {
-    slots.push({
-      ref: { kind: "tile", tileId },
-      satisfied: i < haveCount,
-    });
-  }
-  return slots;
-}
-
-// Builds visual slots from an array of real tiles already in hand, all
-// marked satisfied. Used when every tile shown genuinely exists in the hand.
-export function buildHeldSlots(tiles: Tile[]): VisualSlot[] {
-  return tiles.map((tile) => ({
-    ref: { kind: "tile", tileId: tile.id },
-    satisfied: true,
-  }));
-}
-
-// Builds `count` generic template slots, all marked unsatisfied.
-// Used only for the four yaku that deliberately do not resolve to a
-// specific tile: Chiitoitsu, Pinfu's pair, Toitoi, Sanankou, Suuankou.
-export function buildTemplateSlots(
-  template: TemplateId,
-  count: number
-): VisualSlot[] {
-  const slots: VisualSlot[] = [];
-  for (let i = 0; i < count; i++) {
-    slots.push({
-      ref: { kind: "template", template },
-      satisfied: false,
-    });
-  }
-  return slots;
-}
-
-// Builds visual slots from an array of real tiles already in hand, all
-// marked unsatisfied. Used when a real, known tile needs to be removed
-// or replaced, as opposed to a tile that needs to be added.
-function buildMissingSlots(tiles: Tile[]): VisualSlot[] {
-  return tiles.map((tile) => ({
-    ref: { kind: "tile", tileId: tile.id },
-    satisfied: false,
-  }));
-}
-
 
 // ----------------------------------------------------------------
 // Tile-accurate cost helpers, used for tilesNeeded, not for visuals
@@ -162,19 +113,6 @@ function buildTripletGroupPlan(hand: Tile[], target: number): TripletGroupPlan {
   return { tilesNeeded, visual, leftoverSingleIds };
 }
 
-// Computes the minimum number of physical tiles needed to reach
-// `missingPairs` more unique pairs, beyond what already exists. Existing
-// singles cost 1 tile each to complete into a pair, anything beyond that
-// costs 2 tiles each for a pair built from a tile not yet in hand.
-export function computeChiitoitsuTileCost(hand: Tile[], missingPairs: number): number {
-  const countMap = buildCountMap(hand);
-  const singles = [...countMap.values()].filter((c) => c === 1).length;
-
-  const fromSingles = Math.min(missingPairs, singles);
-  const fromScratch = missingPairs - fromSingles;
-  return fromSingles * 1 + fromScratch * 2;
-}
-
 
 // Builds visual slots for two copies of a v, v+1, v+2 sequence in one suit.
 // Used by Iipeikou, where a duplicate sequence is the goal.
@@ -219,70 +157,6 @@ function buildIttsuuVisual(hand: Tile[], suit: "man" | "pin" | "sou"): VisualSlo
     const id = `${suit}-${v}`;
     return { ref: { kind: "tile" as const, tileId: id }, satisfied: counts[v] >= 1 };
   });
-}
-
-export type CheckerFn = (
-  hand: Tile[],
-  seatWind: string,
-  roundWind: string
-) => CheckResult;
-//Adds the wind values, is used when wincon rules are checked.
-
-// ----------------------------------------------------------------
-// Tile classification helpers
-// Checking the type of the tile and save it as one value. Simplification to not check every time + error checking.
-
-export function isHonour(tile: Tile): boolean {
-  return tile.suit === "wind" || tile.suit === "dragon";
-}
-
-export function isTerminal(tile: Tile): boolean {
-  return (
-    (tile.suit === "man" || tile.suit === "pin" || tile.suit === "sou") &&
-    (tile.value === 1 || tile.value === 9)
-  );
-}
-
-export function isSimple(tile: Tile): boolean {
-  return (
-    (tile.suit === "man" || tile.suit === "pin" || tile.suit === "sou") &&
-    typeof tile.value === "number" &&
-    tile.value >= 2 &&
-    tile.value <= 8
-  );
-}
-
-export function isTerminalOrHonour(tile: Tile): boolean {
-  return isTerminal(tile) || isHonour(tile);
-}
-
-// ----------------------------------------------------------------
-// Counting helpers
-// ----------------------------------------------------------------
-
-// Returns a map of tile id to how many times it appears in the hand
-export function buildCountMap(hand: Tile[]): Map<string, number> {
-  const map = new Map<string, number>();
-  for (const tile of hand) {
-    map.set(tile.id, (map.get(tile.id) ?? 0) + 1);
-  }
-  return map;
-}
-
-// Returns a length-10 array where index = tile value and value = count.
-// Index 0 is always unused. Index 1 = count of value-1 tiles, and so on.
-// Only works for suited tiles (man, pin, or sou).
-export function getSuitCounts(
-  hand: Tile[],
-  suit: "man" | "pin" | "sou"
-): number[] {
-  const counts = new Array(10).fill(0);
-  for (const tile of hand) {
-    if (tile.suit === suit && typeof tile.value === "number") {
-      counts[tile.value]++;
-    }
-  }
-  return counts;
 }
 
 // ----------------------------------------------------------------
@@ -480,15 +354,6 @@ function checkChiitoitsu(
   };
 }
 
-// KOKUSHI MUSOU: one each of all 13 terminal and honour tiles, plus one duplicate.
-export const KOKUSHI_TILES = [
-  "man-1", "man-9",
-  "pin-1", "pin-9",
-  "sou-1", "sou-9",
-  "wind-east", "wind-south", "wind-west", "wind-north",
-  "dragon-white", "dragon-green", "dragon-red",
-];
-
 function checkKokushi(
   hand: Tile[],
   _seatWind: string,
@@ -531,13 +396,26 @@ function checkKokushi(
     };
   }
 
-  if (missingOrphans === 0 && !hasDuplicate) {
+if (missingOrphans === 0 && !hasDuplicate) {
+    // All 13 orphan types held, no duplicate yet, is precisely the
+    // 13-way wait. The function's first branch above (missingOrphans
+    // === 0 && hasDuplicate) is unreachable dead code, since holding all
+    // 13 types plus a duplicate would require 14 physical tiles, more
+    // than this 13-tile checker ever receives. 
+    // Left in place rather than removed here,
+    // since deleting unreachable code is fine,
+    // but it may be required to use in the future.
     return {
       possible: true,
       tilesNeeded: 1,
       gapDescription:
         "Has all 13 terminals and honours. Needs 1 duplicate of any.",
       visual,
+      waitUpgrade: {
+        name: "Kokushi 13-Way Wait",
+        hanValue: 13,
+        gapDescription: "Holds one of each of the 13 terminals and honours, waiting on any of them to complete the duplicate. Hand satisfies Kokushi 13-Way Wait.",
+      },
     };
   }
 
@@ -839,11 +717,19 @@ function checkSuuankou(
       const tile = hand.find((t) => t.id === id)!;
       return [tile, tile, tile];
     });
+    // 4 complete triplets across exactly 13 tiles leaves exactly 1 tile
+    // unaccounted for, which can only ever be a lone single, a tanki
+    // wait, by elimination. No further check is needed to confirm this.
     return {
       possible: true,
       tilesNeeded: 0,
       gapDescription: "Four concealed triplets. Hand satisfies Suuankou.",
       visual: buildHeldSlots(heldTripletTiles),
+      waitUpgrade: {
+        name: "Suuankou Tanki",
+        hanValue: 13,
+        gapDescription: "Four concealed triplets, waiting on a single tile to complete the pair. Hand satisfies Suuankou Tanki.",
+      },
     };
   }
 
@@ -1041,51 +927,139 @@ function checkSanshokuDoukou(
 // Sequence structure checkers
 // ----------------------------------------------------------------
 
-// Note: Pinfu detection is an approximation. It checks that no honours
-// are present and a valid non-yakuhai pair exists. It does not verify
-// that all sets are sequences, which would require full decomposition.
+function tileValueFromId(tileId: string): number {
+  return Number(tileId.split("-")[1]);
+}
+
+// Checks one tied-best Standard decomposition against the three real
+// Pinfu conditions: no triplets anywhere, a complete and non-yakuhai
+// pair, and a true two-sided wait on the one incomplete sequence.
+function evaluatePinfuDecomposition(
+  groups: ShantenGroup[],
+  yakuhaiIds: Set<string>
+): { qualifies: boolean; reason: string } {
+  if (groups.some((g) => g.label === "Triplet")) {
+    return {
+      qualifies: false,
+      reason: "This reading of the hand needs a triplet somewhere, not allowed for Pinfu.",
+    };
+  }
+
+  const pairGroup = groups.find((g) => g.label === "Pair")!;
+  const pairComplete = pairGroup.slots.every((s) => s.satisfied);
+  if (!pairComplete) {
+    return {
+      qualifies: false,
+      reason: "Tenpai, but waiting on the pair itself, a tanki wait, not allowed for Pinfu.",
+    };
+  }
+
+  const pairTileId = pairGroup.slots[0].ref.kind === "tile" ? pairGroup.slots[0].ref.tileId : "";
+  if (yakuhaiIds.has(pairTileId)) {
+    return {
+      qualifies: false,
+      reason: "The pair is a yakuhai tile, dragon, seat wind, or round wind, not allowed for Pinfu.",
+    };
+  }
+
+  const incompleteSequence = groups.find(
+    (g) => g.label === "Sequence" && g.slots.some((s) => !s.satisfied)
+  );
+  if (!incompleteSequence) {
+    return { qualifies: true, reason: "" };
+  }
+
+  const heldValues = incompleteSequence.slots
+    .filter((s) => s.satisfied)
+    .map((s) => (s.ref.kind === "tile" ? tileValueFromId(s.ref.tileId) : NaN));
+  const missingSlot = incompleteSequence.slots.find((s) => !s.satisfied)!;
+  const missingValue = missingSlot.ref.kind === "tile" ? tileValueFromId(missingSlot.ref.tileId) : NaN;
+
+  const waitShape = classifySequenceWait(heldValues, missingValue);
+  if (waitShape !== "ryanmen") {
+    const shapeLabel = waitShape === "kanchan" ? "a closed wait, kanchan" : "an edge wait, penchan";
+    return {
+      qualifies: false,
+      reason: `Tenpai, but waiting on ${shapeLabel}, not a two-sided wait, not allowed for Pinfu.`,
+    };
+  }
+
+  return { qualifies: true, reason: "" };
+}
+
+
 function checkPinfu(
   hand: Tile[],
   seatWind: string,
   roundWind: string
 ): CheckResult {
-  const honours = hand.filter((t) => isHonour(t));
-  const nonHonours = hand.filter((t) => !isHonour(t));
-  if (honours.length > 0) {
-    const visual = [...buildHeldSlots(nonHonours), ...buildMissingSlots(honours)];
-    return {
-      possible: true,
-      tilesNeeded: honours.length,
-      gapDescription: `Has ${honours.length} honour tile${honours.length !== 1 ? "s" : ""}. Pinfu requires sequences only, so all honours must be replaced.`,
-      visual,
-    };
-  }
-
-  const countMap = buildCountMap(hand);
   const yakuhaiIds = new Set([
     "dragon-white", "dragon-green", "dragon-red",
     `wind-${seatWind}`, `wind-${roundWind}`,
   ]);
+  const { distance, decompositions } = calculateStandardShanten(hand);
 
-  const hasValidPair = [...countMap.entries()].some(
-    ([id, count]) => count >= 2 && !yakuhaiIds.has(id)
-  );
+  if (distance > 0) {
+    // Not yet tenpai, the eventual wait shape cannot be known yet, so
+    // this falls back to the original approximation: no honours present,
+    // and a valid non-yakuhai pair candidate exists somewhere. May
+    // occasionally show tilesNeeded: 0 for a hand that would not actually
+    // qualify once it reaches tenpai, but will never miss a genuine
+    // candidate while still under construction.
+    const honours = hand.filter((t) => isHonour(t));
+    const nonHonours = hand.filter((t) => !isHonour(t));
+    if (honours.length > 0) {
+      const visual = [...buildHeldSlots(nonHonours), ...buildMissingSlots(honours)];
+      return {
+        possible: true,
+        tilesNeeded: honours.length,
+        gapDescription: `Has ${honours.length} honour tile${honours.length !== 1 ? "s" : ""}. Pinfu requires sequences only, so all honours must be replaced.`,
+        visual,
+      };
+    }
 
-  if (hasValidPair) {
-    const visual = buildHeldSlots(hand);
+    const countMap = buildCountMap(hand);
+    const hasValidPair = [...countMap.entries()].some(
+      ([id, count]) => count >= 2 && !yakuhaiIds.has(id)
+    );
+
+    if (hasValidPair) {
+      return {
+        possible: true,
+        tilesNeeded: 0,
+        gapDescription: "No honours and a valid non-yakuhai pair exists. Hand may satisfy Pinfu.",
+        visual: buildHeldSlots(hand),
+      };
+    }
     return {
       possible: true,
-      tilesNeeded: 0,
-      gapDescription: "No honours and a valid non-yakuhai pair exists. Hand may satisfy Pinfu.",
-      visual,
+      tilesNeeded: 1,
+      gapDescription: "No valid non-yakuhai pair found. The pair cannot be a dragon or wind tile.",
+      visual: [...buildHeldSlots(hand), ...buildTemplateSlots("pair", 1)],
     };
   }
-  const visual = [...buildHeldSlots(hand), ...buildTemplateSlots("pair", 1)];
+
+  // Tenpai. Check every tied-best decomposition, real Pinfu only needs
+  // one valid reading of the hand to qualify, not every reading.
+  let bestFailureReason = "";
+  for (const groups of decompositions) {
+    const evaluation = evaluatePinfuDecomposition(groups, yakuhaiIds);
+    if (evaluation.qualifies) {
+      return {
+        possible: true,
+        tilesNeeded: 0,
+        gapDescription: "Tenpai with a two-sided wait, all sequences, and a non-yakuhai pair. Hand satisfies Pinfu.",
+        visual: groups.flatMap((g) => g.slots),
+      };
+    }
+    if (!bestFailureReason) bestFailureReason = evaluation.reason;
+  }
+
   return {
     possible: true,
     tilesNeeded: 1,
-    gapDescription: "No valid non-yakuhai pair found. The pair cannot be a dragon or wind tile.",
-    visual,
+    gapDescription: bestFailureReason,
+    visual: decompositions[0].flatMap((g) => g.slots),
   };
 }
 
@@ -1270,14 +1244,24 @@ function checkChuurenPoutou(
     buildTileSlots(`${bestSuit}-${v}`, counts[v], minRequired[v])
   );
 
-  if (deficiency === 0) {
+if (deficiency === 0) {
+    // deficiency reaching exactly 0 means the hand matches the minimal
+    // 1112345678999 pattern with no extra tile yet, which is precisely
+    // the pure, 9-sided wait. Any extra tile beyond this minimal pattern
+    // would show up as a real deficiency in a different value instead.
     return {
       possible: true,
       tilesNeeded: 0,
       gapDescription: `All ${bestSuit} tiles match the 1-1-1-2-3-4-5-6-7-8-9-9-9 pattern. Hand satisfies Chuuren Poutou.`,
       visual,
+      waitUpgrade: {
+        name: "Chuuren Kyuumen",
+        hanValue: 13,
+        gapDescription: `Pure 1-1-1-2-3-4-5-6-7-8-9-9-9 in ${bestSuit}, waiting on any of the 9 ${bestSuit} values. Hand satisfies Chuuren Kyuumen.`,
+      },
     };
   }
+
   return {
     possible: true,
     tilesNeeded: deficiency,

@@ -201,6 +201,15 @@ body {
   border-color: #aaa;
 }
 
+.results-list__wait-upgrade-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: #ccc;
+  cursor: pointer;
+}
+
 .results-list__body {
   flex: 1;
   overflow-y: auto;

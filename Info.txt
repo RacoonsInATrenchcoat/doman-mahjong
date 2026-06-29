@@ -26,14 +26,18 @@ Some yaku are missing: Ryanpeikou, honroutou, chanta, junchan
 https://riichi.wiki/Ryanpeikou
 - Done
 https://riichi.wiki/Honroutou
+- Done
 https://riichi.wiki/Chanta
 - Done
 https://riichi.wiki/Junchantaiyaochuu
 - Done
 Wait dependent yaku are missing (Chuuren Kyuumen, Kokushi Jusanmen, Suuankou Tanki)
 https://riichi.wiki/Chuuren_poutou#Nine_tile_wait
+- Done
 https://riichi.wiki/Kokushi_musou#Kokushi_musou_13-way_wait
-https://riichi.wiki/Suuankou#Tanki
+- Done
+https://riichi.wiki/Suuankou#Tanki\
+- Done
 Consider yaku compatibility for grouping yakus. Rarely a hand only consists of one yaku
 https://riichi.wiki/Yaku_compatibility
 Sorting needs to combine both criteria. When sorting by least steps, display first the higher yaku count; when sorting by yaku, display first the ones with least steps
@@ -54,6 +58,7 @@ No need to order by least han
 - Done
 Instead of steps, display shanten count or tenpai
 https://riichi.wiki/Shanten
+- Done, separate Shanten Calculation is implemented.
 Spelling: Iipeiko -> Iipeikou, Ittsu -> Ittsuu
 - Done
 

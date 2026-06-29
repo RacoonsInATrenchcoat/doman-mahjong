@@ -1,5 +1,5 @@
 import type { Tile } from "../../data/tiles";
-import { buildCountMap, buildHeldSlots, buildTemplateSlots, KOKUSHI_TILES } from "../hand-checkers";
+import { buildCountMap, buildHeldSlots, buildTemplateSlots, KOKUSHI_TILES } from "../tile-utils";
 import type { ShantenSlot, ShantenGroup } from "./standard";
 
 export type KokushiResult = {

@@ -5,8 +5,8 @@ import {
   isHonour,
   buildHeldSlots,
   buildTemplateSlots,
-} from "../hand-checkers";
-import type { VisualSlot } from "../hand-checkers";
+} from "../tile-utils";
+import type { VisualSlot } from "../tile-utils";
 
 export type ShantenSlot = VisualSlot & { contributing?: boolean };
 

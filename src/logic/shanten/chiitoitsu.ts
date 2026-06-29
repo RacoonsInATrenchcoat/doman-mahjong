@@ -4,7 +4,7 @@ import {
   buildHeldSlots,
   buildTemplateSlots,
   computeChiitoitsuTileCost,
-} from "../hand-checkers";
+} from "../tile-utils";
 import type { ShantenSlot, ShantenGroup } from "./standard";
 
 export type ChiitoitsuResult = {

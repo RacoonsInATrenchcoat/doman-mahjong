@@ -23,6 +23,7 @@ function App() {
   const [seatWind, setSeatWind] = useState<WindValue>("east");
   const [roundWind, setRoundWind] = useState<WindValue>("east");
   const [sortMode, setSortMode] = useState<SortMode>("least-steps");
+  const [showWaitUpgrades, setShowWaitUpgrades] = useState(false);
 
   const addTile = (tile: Tile) => {
     setCurrentHand((prev) => {
@@ -48,25 +49,25 @@ function App() {
   const rawResults =
     currentHand.length === 13
       ? ALL_HANDS.map((hand) => {
-          const checker = HAND_CHECKERS[hand.id];
-          const result = checker(currentHand, seatWind, roundWind);
-          return { hand, result };
-        })
+        const checker = HAND_CHECKERS[hand.id];
+        const result = checker(currentHand, seatWind, roundWind);
+        return { hand, result };
+      })
       : null;
 
   const results = rawResults === null ? null : sortResults(rawResults, sortMode);
   //Results and rawresults are separate, as the result is checked by sort-mode filter afterwards.
   //Technically it can be sorted within, but it's good code to sort things separately from the raw results.
 
-// Temporary testing, Shanten verification only for debugging the results.
-/*
-if (currentHand.length === 13) {
-  import("./logic/shanten/index").then(({ calculateShanten }) => {
-  console.log("Shanten:", calculateShanten (currentHand));
-  });
-
-}
-*/
+  // Temporary testing, Shanten verification only for debugging the results.
+  /*
+  if (currentHand.length === 13) {
+    import("./logic/shanten/index").then(({ calculateShanten }) => {
+    console.log("Shanten:", calculateShanten (currentHand));
+    });
+  
+  }
+  */
 
   return (
     <div className="app">
@@ -90,6 +91,8 @@ if (currentHand.length === 13) {
             results={results}
             isOpen={isResultsOpen}
             onToggle={toggleResults}
+            showWaitUpgrades={showWaitUpgrades}
+            onToggleWaitUpgrades={() => setShowWaitUpgrades((prev) => !prev)}
           />
         </div>
       </div>
