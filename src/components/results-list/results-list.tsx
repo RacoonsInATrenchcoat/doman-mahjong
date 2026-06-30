@@ -2,6 +2,10 @@ import type { ResultEntry } from "../../logic/hand-sorter";
 import type { VisualSlot } from "../../logic/hand-checkers";
 import { TEMPLATE_IMAGES } from "../../logic/hand-checkers";
 import { getTileImagePath } from "../../data/tiles";
+//ReactNode is TypeScript's general type for "anything React can render,"
+// letting ResultsList accept an entire other component, SortControls in this case, 
+// without needing to know anything specific about what it actually is.
+import type { ReactNode } from "react";
 
 type ResultsListProps = {
   results: ResultEntry[] | null;
@@ -9,7 +13,9 @@ type ResultsListProps = {
   onToggle: () => void;
   showWaitUpgrades: boolean;
   onToggleWaitUpgrades: () => void;
+  controls: ReactNode;
 };
+
 function getSlotImagePath(slot: VisualSlot): string {
   return slot.ref.kind === "tile"
     ? getTileImagePath(slot.ref.tileId)
@@ -35,19 +41,23 @@ function ResultsList({
   onToggle,
   showWaitUpgrades,
   onToggleWaitUpgrades,
+  controls,
 }: ResultsListProps) {
   return (
     <div className="results-list">
       <div className="results-list__header">
         <h2>Results</h2>
-        <label className="results-list__wait-upgrade-toggle">
-          <input
-            type="checkbox"
-            checked={showWaitUpgrades}
-            onChange={onToggleWaitUpgrades}
-          />
-          Wait upgrades
-        </label>
+        <div className="results-list__header-middle">
+          {controls}
+          <label className="results-list__wait-upgrade-toggle">
+            <input
+              type="checkbox"
+              checked={showWaitUpgrades}
+              onChange={onToggleWaitUpgrades}
+            />
+            Wait upgrades
+          </label>
+        </div>
         <button className="results-list__toggle" onClick={onToggle}>
           {isOpen ? "Hide" : "Show"}
         </button>

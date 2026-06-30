@@ -11,7 +11,8 @@ export type TemplateId =
   | "honour"
   | "non-honour"
   | "terminal"
-  | "wildcard";
+  | "wildcard"
+  | "inactive";
 
 export type VisualTileRef =
   | { kind: "tile"; tileId: string }
@@ -30,6 +31,7 @@ export const TEMPLATE_IMAGES: Record<TemplateId, string> = {
   "non-honour": "/templates/non-honour.gif",
   terminal: "/templates/terminal.gif",
   wildcard: "/templates/wildcard.png",
+  inactive: "/templates/inactive.png",
 };
 
 // ----------------------------------------------------------------

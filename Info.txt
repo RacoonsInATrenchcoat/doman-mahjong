@@ -4,7 +4,7 @@ GoodToKnow:
  - Typescript: Remember to add "type" to more values.
  - When it's compiled with "npm run build", it goes into the "dist" folder.
 
-Steps:
+Basic Steps:
 
 1, Check prerequisites - NPM & Node
 2, Scaffold the Vite + React + TypeScript project
@@ -22,6 +22,7 @@ HIGH PRIORITY
 Pinfu detection is wrong. It needs to take into account Fu calculation, because that's what makes a hand pinfu
 https://riichi.wiki/Pinfu#Definition
 https://riichi.wiki/Fu
+- Done
 Some yaku are missing: Ryanpeikou, honroutou, chanta, junchan
 https://riichi.wiki/Ryanpeikou
 - Done
@@ -70,6 +71,21 @@ Option for using English names of the yaku
 Inner logic:
 1, Tiles.ts sets the blueprint standard for a "Tile". Then it defines each Tile with values, makes them each a constant value (via ID) that is exported to use. 
 2, App.tsx checks the hand.
+
+User steps:
+
+1, User sees the current hand. 
+2, They see the standard Shape calculator on what is beneficial to discard (either by unused tiles, or seeing if a missing middle tile is statistically more likely than a 1-9) for a sequence/triplet. 
+3, They also use the Results table to see if they did an oops and "hand no longer satisifies Tanyao, has a honor tile", otherwise is a reminder of the rule "All tiles are simples. Hand satisfies Tanyao."
+4, Here the user has no use or need for the new box of the summary/yaku. If it was not a Tanyao, but it had 3 separate Yakus, here it would have a use-case to show sumarrised that for example, a "Yakuhai + Iipeikou" currently exists, with X tiles as unused. (Which enables to see the unused tiles to get a standard shape as soon as possible.)
+5, User has the information to make a decision and discards a tile.
+
+Usecase:
+- Start, layout and plan to Sessions
+- Shanten calculation planning
+- Combined Yaku planning
+- Feedback and changes
+- Design
 
 Starting Versions:
 1, Node v24.16.0

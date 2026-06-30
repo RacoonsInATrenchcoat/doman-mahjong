@@ -3,7 +3,7 @@ import type { Tile } from "./data/tiles";
 //Have to add "type" otherwise it errors out, due to Typescript rules.
 import { ALL_HANDS } from "./data/hands";
 import { HAND_CHECKERS } from "./logic/hand-checkers";
-import { sortResults } from "./logic/hand-sorter";
+import { sortResults, buildCombinedYakuResult } from "./logic/hand-sorter";
 //No type added here as "sortResults is a real function"
 import type { SortMode } from "./logic/hand-sorter";
 //Type used here as "SortMode is only a type"
@@ -12,6 +12,7 @@ import CurrentHand from "./components/current-hand/current-hand";
 import ResultsList from "./components/results-list/results-list";
 import SortControls from "./components/sort-controls/sort-controls";
 import ShantenPanel from "./components/shanten-panel/shanten-panel";
+import CombinedYakuPanel from "./components/combined-yaku-panel/combined-yaku-panel";
 
 type WindValue = "east" | "south" | "west" | "north";
 //duplication from sort-controls.tsx, will need cleanup leater
@@ -56,6 +57,8 @@ function App() {
       : null;
 
   const results = rawResults === null ? null : sortResults(rawResults, sortMode);
+  const combinedYaku =
+    rawResults === null ? null : buildCombinedYakuResult(rawResults, currentHand);
   //Results and rawresults are separate, as the result is checked by sort-mode filter afterwards.
   //Technically it can be sorted within, but it's good code to sort things separately from the raw results.
 
@@ -69,6 +72,7 @@ function App() {
   }
   */
 
+  //Here is where the main HTML part lives.
   return (
     <div className="app">
       <header className="app__header">
@@ -79,20 +83,23 @@ function App() {
         <TilePicker currentHand={currentHand} onTileClick={addTile} />
         <div className="app__results-panel">
           <ShantenPanel currentHand={currentHand} />
-          <SortControls
-            seatWind={seatWind}
-            roundWind={roundWind}
-            onSeatWindChange={setSeatWind}
-            onRoundWindChange={setRoundWind}
-            sortMode={sortMode}
-            onSortModeChange={setSortMode}
-          />
+          <CombinedYakuPanel result={combinedYaku} />
           <ResultsList
             results={results}
             isOpen={isResultsOpen}
             onToggle={toggleResults}
             showWaitUpgrades={showWaitUpgrades}
             onToggleWaitUpgrades={() => setShowWaitUpgrades((prev) => !prev)}
+            controls={
+              <SortControls
+                seatWind={seatWind}
+                roundWind={roundWind}
+                onSeatWindChange={setSeatWind}
+                onRoundWindChange={setRoundWind}
+                sortMode={sortMode}
+                onSortModeChange={setSortMode}
+              />
+            }
           />
         </div>
       </div>
