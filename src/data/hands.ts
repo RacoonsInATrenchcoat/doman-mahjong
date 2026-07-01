@@ -10,7 +10,8 @@ export const ALL_HANDS: Hand[] = [
   // 1 Han
   { id: "pinfu",          name: "Pinfu",                  hanValue: 1,  description: "Four sequences and a non-yakuhai pair." },
   { id: "tanyao",         name: "Tanyao",                 hanValue: 1,  description: "All tiles are simples. No terminals or honours." },
-  { id: "iipeikou",       name: "Iipeikou",                hanValue: 1,  description: "Two identical sequences in the same suit." },
+  { id: "menzen-tsumo",   name: "Menzen Tsumo",           hanValue: 1, description: "Win by self-draw with a closed hand. Only detectable at 14 tiles." },
+  { id: "iipeikou",       name: "Iipeikou",               hanValue: 1,  description: "Two identical sequences in the same suit." },
   { id: "yakuhai-white",  name: "Yakuhai (White Dragon)", hanValue: 1,  description: "A triplet of White Dragon tiles." },
   { id: "yakuhai-green",  name: "Yakuhai (Green Dragon)", hanValue: 1,  description: "A triplet of Green Dragon tiles." },
   { id: "yakuhai-red",    name: "Yakuhai (Red Dragon)",   hanValue: 1,  description: "A triplet of Red Dragon tiles." },
@@ -20,12 +21,12 @@ export const ALL_HANDS: Hand[] = [
   // 2 Han
   { id: "chiitoitsu",       name: "Chiitoitsu",         hanValue: 2,  description: "Seven different pairs." },
   { id: "sanshoku-doujun",  name: "Sanshoku Doujun",    hanValue: 2,  description: "The same sequence in all three suits." },
-  { id: "ittsuu",           name: "Ittsuu",              hanValue: 2,  description: "Sequences of 1-2-3, 4-5-6, and 7-8-9 in the same suit." },
+  { id: "ittsuu",           name: "Ittsuu",             hanValue: 2,  description: "Sequences of 1-2-3, 4-5-6, and 7-8-9 in the same suit." },
   { id: "toitoi",           name: "Toitoi",             hanValue: 2,  description: "All four sets are triplets." },
   { id: "sanankou",         name: "Sanankou",           hanValue: 2,  description: "Three concealed triplets." },
   { id: "sanshoku-doukou",  name: "Sanshoku Doukou",    hanValue: 2,  description: "The same triplet in all three suits." },
   { id: "shousangen",       name: "Shousangen",         hanValue: 2,  description: "Triplets of two dragons and a pair of the third." },
-  { id: "chanta",           name: "Chanta",  hanValue: 2, description: "Every set and the pair contains a terminal or honour tile." },
+  { id: "chanta",           name: "Chanta",             hanValue: 2, description: "Every set and the pair contains a terminal or honour tile." },
   { id: "honroutou",       name: "Honroutou",       hanValue: 2,  description: "All tiles are terminals and honours, no simples." },
 
   // 3 Han

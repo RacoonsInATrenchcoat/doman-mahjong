@@ -55,6 +55,7 @@ Honitsu detection is wrong (hand with all honors is wrongly detected as Honitsu)
 
 MINOR ISSUES
 If a yaku can only be obtained with a closed hand (or if it gives less han with an open hand), display it in the UI
+- ToDo
 No need to order by least han
 - Done
 Instead of steps, display shanten count or tenpai
@@ -65,7 +66,9 @@ Spelling: Iipeiko -> Iipeikou, Ittsu -> Ittsuu
 
 NICE TO HAVE
 Option for using regular mahjong skin for the tiles
+- ToDo
 Option for using English names of the yaku
+- ToDo
 
 
 Inner logic:

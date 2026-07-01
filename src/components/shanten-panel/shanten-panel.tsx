@@ -34,7 +34,7 @@ function ShantenPanel({ currentHand }: ShantenPanelProps) {
   const [selectedShape, setSelectedShape] = useState<ShapeName | null>(null);
 
   useEffect(() => {
-    if (currentHand.length !== 13) {
+    if (currentHand.length < 13) {
       setResult(null);
       setSelectedShape(null);
       return;
@@ -93,7 +93,8 @@ function ShantenPanel({ currentHand }: ShantenPanelProps) {
       </div>
 
       <p className="shanten-panel__caption">
-        {SHAPE_LABELS[selectedShape]}, {active.distance} away
+        {SHAPE_LABELS[selectedShape]},{" "}
+        {active.distance < 0 ? "hand complete" : `${active.distance} away`}
       </p>
     </div>
   );

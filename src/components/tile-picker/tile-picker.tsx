@@ -8,7 +8,7 @@ type TilePickerProps = {
 
 function TilePicker({ currentHand, onTileClick }: TilePickerProps) {
   const suits = ["man", "pin", "sou", "wind", "dragon"] as const;
-  const isHandFull = currentHand.length >= 13;
+  const isHandFull = currentHand.length >= 14;
   //Change here for max hand size, used for testing.
 
   const getTileCount = (tileId: string) => {

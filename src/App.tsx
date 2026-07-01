@@ -7,6 +7,7 @@ import { sortResults, buildCombinedYakuResult } from "./logic/hand-sorter";
 //No type added here as "sortResults is a real function"
 import type { SortMode } from "./logic/hand-sorter";
 //Type used here as "SortMode is only a type"
+import { calculateShanten } from "./logic/shanten";
 import TilePicker from "./components/tile-picker/tile-picker";
 import CurrentHand from "./components/current-hand/current-hand";
 import ResultsList from "./components/results-list/results-list";
@@ -28,7 +29,7 @@ function App() {
 
   const addTile = (tile: Tile) => {
     setCurrentHand((prev) => {
-      if (prev.length >= 13) return prev;
+      if (prev.length >= 14) return prev;
       return [...prev, tile];
     });
   };
@@ -48,7 +49,7 @@ function App() {
   };
 
   const rawResults =
-    currentHand.length === 13
+    currentHand.length >= 13
       ? ALL_HANDS.map((hand) => {
         const checker = HAND_CHECKERS[hand.id];
         const result = checker(currentHand, seatWind, roundWind);
@@ -57,10 +58,24 @@ function App() {
       : null;
 
   const results = rawResults === null ? null : sortResults(rawResults, sortMode);
+
   const combinedYaku =
+    //Results and rawresults are separate, as the result is checked by sort-mode filter afterwards.
+    //Technically it can be sorted within, but it's good code to sort things separately from the raw results.
     rawResults === null ? null : buildCombinedYakuResult(rawResults, currentHand);
-  //Results and rawresults are separate, as the result is checked by sort-mode filter afterwards.
-  //Technically it can be sorted within, but it's good code to sort things separately from the raw results.
+
+  // Only computed at 14 tiles. For each tile, temporarily removes it and
+  // runs the full shanten calculation on the remaining 13, recording the
+  // minimum distance across all three shapes. Lower is better.
+  const discardDistances: number[] | null =
+    currentHand.length === 14
+      ? currentHand.map((_, index) => {
+        const subHand = currentHand.filter((_, i) => i !== index);
+        const { standard, chiitoitsu, kokushi } = calculateShanten(subHand);
+        return Math.min(standard.distance, chiitoitsu.distance, kokushi.distance);
+      })
+      : null;
+
 
   // Temporary testing, Shanten verification only for debugging the results.
   /*
@@ -78,7 +93,12 @@ function App() {
       <header className="app__header">
         <h1>Doman Mahjong Hand Checker</h1>
       </header>
-      <CurrentHand currentHand={currentHand} onTileClick={removeTile} onReset={clearHand} />
+      <CurrentHand
+        currentHand={currentHand}
+        onTileClick={removeTile}
+        onReset={clearHand}
+        discardDistances={discardDistances}
+      />
       <div className="app__main">
         <TilePicker currentHand={currentHand} onTileClick={addTile} />
         <div className="app__results-panel">

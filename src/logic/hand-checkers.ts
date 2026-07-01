@@ -18,6 +18,7 @@ import {
 import type { TemplateId, VisualSlot } from "./tile-utils";
 import { calculateStandardShanten } from "./shanten/standard";
 import type { ShantenGroup } from "./shanten/standard";
+import { calculateShanten } from "./shanten";
 
 // Re-exported so existing imports elsewhere in the project (results-list.tsx,
 // shanten-panel.tsx) continue to work unchanged, even though these now
@@ -1445,6 +1446,55 @@ function checkJunchan(
   };
 }
 
+function checkMenzenTsumo(
+  hand: Tile[],
+  _seatWind: string,
+  _roundWind: string
+): CheckResult {
+  // Menzen Tsumo requires winning by self-draw with a closed hand, which
+  // is the explicit framing of the 14th tile feature. At fewer than 14
+  // tiles, the hand is not yet in a drawn-tile state, so the distance
+  // shown reflects how far the hand is from reaching a complete structure
+  // at all, using the true shanten distance as the basis.
+  const { standard, chiitoitsu, kokushi } = calculateShanten(hand);
+  const minDistance = Math.min(
+    standard.distance,
+    chiitoitsu.distance,
+    kokushi.distance
+  );
+
+  if (minDistance < 0) {
+    // Distance -1 means a complete winning structure exists. With 14
+    // tiles and a closed hand, Menzen Tsumo applies immediately.
+    return {
+      possible: true,
+      tilesNeeded: 0,
+      gapDescription: "Hand is complete. Call Tsumo. Hand satisfies Menzen Tsumo.",
+      visual: buildHeldSlots(hand),
+    };
+  }
+
+  // Convert shanten distance to tiles needed to win. Shanten 0 = tenpai
+  // = 1 tile away from winning.
+  const tilesNeeded = minDistance + 1;
+
+  if (tilesNeeded === 1) {
+    return {
+      possible: true,
+      tilesNeeded: 1,
+      gapDescription: "Hand is at tenpai. Draw the winning tile to call Tsumo.",
+      visual: buildHeldSlots(hand),
+    };
+  }
+
+  return {
+    possible: true,
+    tilesNeeded,
+    gapDescription: `${minDistance} shanten. Needs to reach tenpai before Tsumo is possible.`,
+    visual: buildHeldSlots(hand),
+  };
+}
+
 // ----------------------------------------------------------------
 // Checker map: one entry per hand id defined in hands.ts
 // ----------------------------------------------------------------
@@ -1452,6 +1502,7 @@ function checkJunchan(
 export const HAND_CHECKERS: Record<string, CheckerFn> = {
   pinfu:             checkPinfu,
   tanyao:            checkTanyao,
+  "menzen-tsumo":    checkMenzenTsumo,
   iipeikou:          checkIipeikou,
   ryanpeikou:        checkRyanpeikou,
   "yakuhai-white":   checkYakuhaiWhite,

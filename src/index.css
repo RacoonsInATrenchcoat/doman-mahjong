@@ -132,6 +132,7 @@ Originally was hover to open, but removed for better visibility. Stays as it may
 }
 
 .current-hand__tile {
+  position: relative;
   background: none;
   border: 1px solid #555;
   border-radius: 4px;
@@ -550,4 +551,43 @@ Originally was hover to open, but removed for better visibility. Stays as it may
   align-items: center;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+/* 14th tile visual separation */
+.current-hand__tile--drawn {
+  margin-left: 1.5rem;
+  border-color: #6fa8dc;
+  background-color: rgba(111, 168, 220, 0.1);
+}
+
+.current-hand__tile--drawn:hover {
+  border-color: #e05555;
+}
+
+/* Discard recommendation badges */
+.current-hand__discard-badge {
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.6rem;
+  font-weight: bold;
+  border-radius: 3px;
+  padding: 0 3px;
+  line-height: 1.4;
+  color: #1a1a1a;
+  z-index: 1;
+  white-space: nowrap;
+}
+
+.current-hand__discard-badge--tenpai {
+  background-color: #6abf6a;
+}
+
+.current-hand__discard-badge--close {
+  background-color: #e8923a;
+}
+
+.current-hand__discard-badge--far {
+  background-color: #e05555;
 }
