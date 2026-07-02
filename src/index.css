@@ -591,3 +591,9 @@ Originally was hover to open, but removed for better visibility. Stays as it may
 .current-hand__discard-badge--far {
   background-color: #e05555;
 }
+
+.shanten-panel__riichi-note {
+  font-size: 0.8rem;
+  color: #6abf6a;
+  font-style: italic;
+}

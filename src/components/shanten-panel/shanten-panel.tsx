@@ -54,9 +54,17 @@ function ShantenPanel({ currentHand }: ShantenPanelProps) {
     );
   }
 
-  const shapes: ShapeName[] = ["standard", "chiitoitsu", "kokushi"];
+const shapes: ShapeName[] = ["standard", "chiitoitsu", "kokushi"];
   const active: ShapeResult = result[selectedShape];
   const groups: ShantenGroup[] = active.decompositions[0];
+
+  // Collect every shape currently at tenpai (distance exactly 0, not
+  // -1 which is hand complete and not riichi-declarable).
+  const riichiForms: ShapeName[] = shapes.filter(
+    (shape) => result[shape].distance === 0
+  );
+  const activeIsRiichi = active.distance === 0;
+  const otherRiichiForms = riichiForms.filter((s) => s !== selectedShape);
 
   return (
     <div className="shanten-panel">
@@ -94,8 +102,19 @@ function ShantenPanel({ currentHand }: ShantenPanelProps) {
 
       <p className="shanten-panel__caption">
         {SHAPE_LABELS[selectedShape]},{" "}
-        {active.distance < 0 ? "hand complete" : `${active.distance} away`}
+        {active.distance < 0
+          ? "hand complete"
+          : `${active.distance} away`}
+        {activeIsRiichi ? " - Riichi possible" : ""}
       </p>
+
+      {otherRiichiForms.length > 0 && (
+        <p className="shanten-panel__riichi-note">
+          Also tenpai via{" "}
+          {otherRiichiForms.map((s) => SHAPE_LABELS[s]).join(" and ")},
+          Riichi possible.
+        </p>
+      )}
     </div>
   );
 }
