@@ -9,6 +9,10 @@ GoodToKnow:
         theme	dark
  - Gear "icon" in the Settings is a text "Unicode code point U+2699, called "Black Gear" from the Miscellaneous Technical block". 
         Technically can be different on different locales, replace with an image if somehow its a problem later.
+ - localStorage saves: 
+        firebase:previous_websocket_failure	true 
+        language	japanese
+        theme	dark
 
 Basic Steps:
 
