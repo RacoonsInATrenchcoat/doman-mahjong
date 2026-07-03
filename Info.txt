@@ -3,6 +3,10 @@ GoodToKnow:
  - Kebab-case is used for file names, CSS classes, and component names. Inside TypeScript object properties, camelCase is the default used.
  - Typescript: Remember to add "type" to more values.
  - When it's compiled with "npm run build", it goes into the "dist" folder.
+ - localStorage saves: 
+        firebase:previous_websocket_failure	true 
+        language	japanese
+        theme	dark
 
 Basic Steps:
 

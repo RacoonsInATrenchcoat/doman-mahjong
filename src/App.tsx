@@ -9,7 +9,6 @@ import type { SortMode } from "./logic/hand-sorter";
 //Type used here as "SortMode is only a type"
 import { calculateShanten } from "./logic/shanten";
 import type { LanguageOption } from "./settings";
-import { LANGUAGE_OPTIONS } from "./settings";
 import TilePicker from "./components/tile-picker/tile-picker";
 import CurrentHand from "./components/current-hand/current-hand";
 import ResultsList from "./components/results-list/results-list";
