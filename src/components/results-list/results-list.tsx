@@ -1,5 +1,5 @@
 import type { ResultEntry } from "../../logic/hand-sorter";
-import type { LanguageOption } from "../../settings";
+import type { LanguageOption, TileSkinOption } from "../../settings";
 import type { VisualSlot } from "../../logic/hand-checkers";
 import { TEMPLATE_IMAGES } from "../../logic/hand-checkers";
 import { getTileImagePath } from "../../data/tiles";
@@ -15,12 +15,13 @@ type ResultsListProps = {
   showWaitUpgrades: boolean;
   onToggleWaitUpgrades: () => void;
   language: LanguageOption;
+  tileSkin: TileSkinOption;
   controls: ReactNode;
 };
 
-function getSlotImagePath(slot: VisualSlot): string {
+function getSlotImagePath(slot: VisualSlot, skin: TileSkinOption): string {
   return slot.ref.kind === "tile"
-    ? getTileImagePath(slot.ref.tileId)
+    ? getTileImagePath(slot.ref.tileId, skin)
     : TEMPLATE_IMAGES[slot.ref.template];
 }
 
@@ -44,6 +45,7 @@ function ResultsList({
   showWaitUpgrades,
   onToggleWaitUpgrades,
   language,
+  tileSkin,
   controls,
 }: ResultsListProps) {
   return (
@@ -101,7 +103,7 @@ function ResultsList({
                       {result.visual.map((slot, index) => (
                         <img
                           key={index}
-                          src={getSlotImagePath(slot)}
+                          src={getSlotImagePath(slot, tileSkin)}
                           alt={getSlotAlt(slot)}
                           className={getSlotClass(slot)}
                         />

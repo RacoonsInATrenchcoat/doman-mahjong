@@ -96,6 +96,20 @@ body {
   margin-bottom: 0.2rem;
 }
 
+.settings-panel__slider {
+  width: 100%;
+  cursor: pointer;
+  accent-color: #e8b84b;
+}
+
+.settings-panel__slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: #888;
+  margin-top: 0.2rem;
+}
+
 .settings-panel__radio-label {
   display: flex;
   align-items: center;
@@ -159,8 +173,8 @@ Originally was hover to open, but removed for better visibility. Stays as it may
 
 .tile-picker__tile img {
   display: block;
-  width: 40px;
-  height: auto;
+  height: var(--tile-height);
+  width: auto;
 }
 
 .tile-picker__tile:hover {
@@ -214,8 +228,8 @@ Originally was hover to open, but removed for better visibility. Stays as it may
 
 .current-hand__tile img {
   display: block;
-  width: 40px;
-  height: auto;
+  height: var(--tile-height);
+  width: auto;
 }
 
 .current-hand__tile:hover {
@@ -415,11 +429,12 @@ Originally was hover to open, but removed for better visibility. Stays as it may
 
 .results-list__visual-tile {
   display: block;
-  height: 32px;
+  height: var(--tile-height);
   width: auto;
   border-radius: 3px;
   opacity: 1;
-  transition: opacity 0.2s ease;
+  border: 1px solid transparent;
+  transition: opacity 0.2s ease, border-color 0.2s ease;
 }
 
 .results-list__visual-tile--missing {
@@ -480,7 +495,7 @@ Originally was hover to open, but removed for better visibility. Stays as it may
 
 .shanten-panel__tile {
   display: block;
-  height: 32px;
+  height: var(--tile-height);
   width: auto;
   border-radius: 3px;
   opacity: 1;
@@ -602,7 +617,7 @@ Originally was hover to open, but removed for better visibility. Stays as it may
 
 .combined-yaku-panel__tile {
   display: block;
-  height: 32px;
+  height: var(--tile-height);
   width: auto;
   border-radius: 3px;
 }

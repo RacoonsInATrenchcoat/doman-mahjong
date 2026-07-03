@@ -7,6 +7,8 @@ GoodToKnow:
         firebase:previous_websocket_failure	true 
         language	japanese
         theme	dark
+ - Gear "icon" in the Settings is a text "Unicode code point U+2699, called "Black Gear" from the Miscellaneous Technical block". 
+        Technically can be different on different locales, replace with an image if somehow its a problem later.
 
 Basic Steps:
 
@@ -59,7 +61,7 @@ Honitsu detection is wrong (hand with all honors is wrongly detected as Honitsu)
 
 MINOR ISSUES
 If a yaku can only be obtained with a closed hand (or if it gives less han with an open hand), display it in the UI
-- ToDo
+- Skipped, problem due to internal logic for a hand detection.
 No need to order by least han
 - Done
 Instead of steps, display shanten count or tenpai
@@ -70,9 +72,9 @@ Spelling: Iipeiko -> Iipeikou, Ittsu -> Ittsuu
 
 NICE TO HAVE
 Option for using regular mahjong skin for the tiles
-- ToDo
+- Done
 Option for using English names of the yaku
-- ToDo
+- Done
 
 
 Inner logic:
@@ -108,3 +110,5 @@ Firebase: https://console.firebase.google.com/u/0/project/doman-mahjong/overview
 Assets:
 
     Mahjong tiles from FF14 Wiki: https://ffxiv.consolegameswiki.com/wiki/FF14_Wiki
+    "Standard" Mahjong tiles from Wikpedia: https://en.wikipedia.org/wiki/Mahjong_tiles
+        Author 	Cangjie6 (remake), Jerry Crimson Mann (original), User:Dewclouds (vectorisation)

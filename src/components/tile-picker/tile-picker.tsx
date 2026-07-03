@@ -1,12 +1,14 @@
-import { ALL_TILES } from "../../data/tiles";
+import { ALL_TILES, getTileImagePath } from "../../data/tiles";
 import type { Tile } from "../../data/tiles";
+import type { TileSkinOption } from "../../settings";
 
 type TilePickerProps = {
   currentHand: Tile[];
   onTileClick: (tile: Tile) => void;
+  tileSkin: TileSkinOption;
 };
 
-function TilePicker({ currentHand, onTileClick }: TilePickerProps) {
+function TilePicker({ currentHand, onTileClick, tileSkin }: TilePickerProps) {
   const suits = ["man", "pin", "sou", "wind", "dragon"] as const;
   const isHandFull = currentHand.length >= 14;
   //Change here for max hand size, used for testing.
@@ -26,7 +28,7 @@ function TilePicker({ currentHand, onTileClick }: TilePickerProps) {
               const count = getTileCount(tile.id);
               const isDisabled = count >= 4 || isHandFull;
               //This disallows more than 4 of the same tile to be picked.
-              
+
               return (
                 <button
                   key={tile.id}
@@ -34,7 +36,7 @@ function TilePicker({ currentHand, onTileClick }: TilePickerProps) {
                   onClick={() => !isDisabled && onTileClick(tile)}
                   title={tile.id}
                 >
-                  <img src={tile.imagePath} alt={tile.id} />
+                  <img src={getTileImagePath(tile.id, tileSkin)} alt={tile.id} />
                   {count > 0 && (
                     <span className="tile-picker__count">{count}</span>
                   )}

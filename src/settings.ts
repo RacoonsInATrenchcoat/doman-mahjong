@@ -9,3 +9,22 @@ export const LANGUAGE_OPTIONS: { value: LanguageOption; label: string }[] = [
   { value: "japanese", label: "Japanese (Romaji)" },
   { value: "english",  label: "English" },
 ];
+
+export type TileSkinOption = "doman" | "standard";
+
+export const TILE_SKIN_OPTIONS: { value: TileSkinOption; label: string }[] = [
+  { value: "doman",    label: "Doman (Default)" },
+  { value: "standard", label: "Standard" },
+];
+
+export const TILE_SKIN_EXTENSION: Record<TileSkinOption, string> = {
+  doman:    "png",
+  standard: "svg",
+};
+
+//Adjust here for the specific Tile size values!
+export const TILE_HEIGHT_DEFAULT = 54;
+//Min value on the slider
+export const TILE_HEIGHT_MIN = 27;
+//Max value on the slider
+export const TILE_HEIGHT_MAX = 81;

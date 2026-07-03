@@ -3,13 +3,17 @@ import type { Tile } from "../../data/tiles";
 import { getTileImagePath } from "../../data/tiles";
 import { TEMPLATE_IMAGES } from "../../logic/hand-checkers";
 import type { ShapeName, ShantenResult, ShapeResult, ShantenSlot, ShantenGroup } from "../../logic/shanten";
+import type { TileSkinOption } from "../../settings";
 
 type ShantenPanelProps = {
   currentHand: Tile[];
+  tileSkin: TileSkinOption;
 };
 
-function getSlotImagePath(slot: ShantenSlot): string {
-  return slot.ref.kind === "tile" ? getTileImagePath(slot.ref.tileId) : TEMPLATE_IMAGES[slot.ref.template];
+function getSlotImagePath(slot: ShantenSlot, skin: TileSkinOption): string {
+  return slot.ref.kind === "tile"
+    ? getTileImagePath(slot.ref.tileId, skin)
+    : TEMPLATE_IMAGES[slot.ref.template];
 }
 
 function getSlotAlt(slot: ShantenSlot): string {
@@ -29,7 +33,7 @@ const SHAPE_LABELS: Record<ShapeName, string> = {
   kokushi: "Kokushi Shape",
 };
 
-function ShantenPanel({ currentHand }: ShantenPanelProps) {
+function ShantenPanel({ currentHand, tileSkin }: ShantenPanelProps) {
   const [result, setResult] = useState<ShantenResult | null>(null);
   const [selectedShape, setSelectedShape] = useState<ShapeName | null>(null);
 
@@ -88,12 +92,12 @@ const shapes: ShapeName[] = ["standard", "chiitoitsu", "kokushi"];
             <span className="shanten-panel__group-label">{group.label}</span>
             <div className="shanten-panel__group-tiles">
               {group.slots.map((slot, slotIndex) => (
-                <img
-                  key={slotIndex}
-                  src={getSlotImagePath(slot)}
-                  alt={getSlotAlt(slot)}
-                  className={getSlotClass(slot)}
-                />
+<img
+                    key={slotIndex}
+                    src={getSlotImagePath(slot, tileSkin)}
+                    alt={getSlotAlt(slot)}
+                    className={getSlotClass(slot)}
+                  />
               ))}
             </div>
           </div>

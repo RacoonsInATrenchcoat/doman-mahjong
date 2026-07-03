@@ -1,10 +1,13 @@
 import type { Tile } from "../../data/tiles";
+import { getTileImagePath } from "../../data/tiles";
+import type { TileSkinOption } from "../../settings";
 
 type CurrentHandProps = {
   currentHand: Tile[];
   onTileClick: (index: number) => void;
   onReset: () => void;
   discardDistances: number[] | null;
+  tileSkin: TileSkinOption;
 };
 
 // Returns a CSS class name for a discard badge based on the resulting
@@ -15,7 +18,7 @@ function discardBadgeClass(distance: number): string {
   return "current-hand__discard-badge current-hand__discard-badge--far";
 }
 
-function CurrentHand({ currentHand, onTileClick, onReset, discardDistances }: CurrentHandProps) {
+function CurrentHand({ currentHand, onTileClick, onReset, discardDistances, tileSkin }: CurrentHandProps) {
   const emptySlots = Math.max(0, 13 - Math.min(currentHand.length, 13));
   const has14 = currentHand.length === 14;
 
@@ -39,7 +42,7 @@ function CurrentHand({ currentHand, onTileClick, onReset, discardDistances }: Cu
               onClick={() => onTileClick(index)}
               title={isDrawnTile ? `Drawn tile: ${tile.id}` : `Remove ${tile.id}`}
             >
-              <img src={tile.imagePath} alt={tile.id} />
+              <img src={getTileImagePath(tile.id, tileSkin)} alt={tile.id} />
               {discardDistances !== null && (
                 <span className={discardBadgeClass(discardDistances[index])}>
                   {discardDistances[index]}

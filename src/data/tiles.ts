@@ -2,7 +2,6 @@ export type Tile = {
   id: string;
   suit: "man" | "pin" | "sou" | "wind" | "dragon";
   value: number | string;
-  imagePath: string;
 };
 
 /*
@@ -16,51 +15,54 @@ ImagePath: uses camelCase here, industry standard?
 
 export const ALL_TILES: Tile[] = [
   // Man (Characters) 1-9
-  { id: "man-1", suit: "man", value: 1, imagePath: "/tiles/man-1.png" },
-  { id: "man-2", suit: "man", value: 2, imagePath: "/tiles/man-2.png" },
-  { id: "man-3", suit: "man", value: 3, imagePath: "/tiles/man-3.png" },
-  { id: "man-4", suit: "man", value: 4, imagePath: "/tiles/man-4.png" },
-  { id: "man-5", suit: "man", value: 5, imagePath: "/tiles/man-5.png" },
-  { id: "man-6", suit: "man", value: 6, imagePath: "/tiles/man-6.png" },
-  { id: "man-7", suit: "man", value: 7, imagePath: "/tiles/man-7.png" },
-  { id: "man-8", suit: "man", value: 8, imagePath: "/tiles/man-8.png" },
-  { id: "man-9", suit: "man", value: 9, imagePath: "/tiles/man-9.png" },
+  { id: "man-1", suit: "man", value: 1},
+  { id: "man-2", suit: "man", value: 2},
+  { id: "man-3", suit: "man", value: 3},
+  { id: "man-4", suit: "man", value: 4},
+  { id: "man-5", suit: "man", value: 5},
+  { id: "man-6", suit: "man", value: 6},
+  { id: "man-7", suit: "man", value: 7},
+  { id: "man-8", suit: "man", value: 8},
+  { id: "man-9", suit: "man", value: 9},
 
   // Pin (Circles) 1-9
-  { id: "pin-1", suit: "pin", value: 1, imagePath: "/tiles/pin-1.png" },
-  { id: "pin-2", suit: "pin", value: 2, imagePath: "/tiles/pin-2.png" },
-  { id: "pin-3", suit: "pin", value: 3, imagePath: "/tiles/pin-3.png" },
-  { id: "pin-4", suit: "pin", value: 4, imagePath: "/tiles/pin-4.png" },
-  { id: "pin-5", suit: "pin", value: 5, imagePath: "/tiles/pin-5.png" },
-  { id: "pin-6", suit: "pin", value: 6, imagePath: "/tiles/pin-6.png" },
-  { id: "pin-7", suit: "pin", value: 7, imagePath: "/tiles/pin-7.png" },
-  { id: "pin-8", suit: "pin", value: 8, imagePath: "/tiles/pin-8.png" },
-  { id: "pin-9", suit: "pin", value: 9, imagePath: "/tiles/pin-9.png" },
+  { id: "pin-1", suit: "pin", value: 1},
+  { id: "pin-2", suit: "pin", value: 2},
+  { id: "pin-3", suit: "pin", value: 3},
+  { id: "pin-4", suit: "pin", value: 4},
+  { id: "pin-5", suit: "pin", value: 5},
+  { id: "pin-6", suit: "pin", value: 6},
+  { id: "pin-7", suit: "pin", value: 7},
+  { id: "pin-8", suit: "pin", value: 8},
+  { id: "pin-9", suit: "pin", value: 9},
 
   // Sou (Bamboo) 1-9
-  { id: "sou-1", suit: "sou", value: 1, imagePath: "/tiles/sou-1.png" },
-  { id: "sou-2", suit: "sou", value: 2, imagePath: "/tiles/sou-2.png" },
-  { id: "sou-3", suit: "sou", value: 3, imagePath: "/tiles/sou-3.png" },
-  { id: "sou-4", suit: "sou", value: 4, imagePath: "/tiles/sou-4.png" },
-  { id: "sou-5", suit: "sou", value: 5, imagePath: "/tiles/sou-5.png" },
-  { id: "sou-6", suit: "sou", value: 6, imagePath: "/tiles/sou-6.png" },
-  { id: "sou-7", suit: "sou", value: 7, imagePath: "/tiles/sou-7.png" },
-  { id: "sou-8", suit: "sou", value: 8, imagePath: "/tiles/sou-8.png" },
-  { id: "sou-9", suit: "sou", value: 9, imagePath: "/tiles/sou-9.png" },
+  { id: "sou-1", suit: "sou", value: 1},
+  { id: "sou-2", suit: "sou", value: 2},
+  { id: "sou-3", suit: "sou", value: 3},
+  { id: "sou-4", suit: "sou", value: 4},
+  { id: "sou-5", suit: "sou", value: 5},
+  { id: "sou-6", suit: "sou", value: 6},
+  { id: "sou-7", suit: "sou", value: 7},
+  { id: "sou-8", suit: "sou", value: 8},
+  { id: "sou-9", suit: "sou", value: 9},
 
   // Winds 1-4
-  { id: "wind-east",  suit: "wind", value: "east",  imagePath: "/tiles/wind-east.png" },
-  { id: "wind-south", suit: "wind", value: "south", imagePath: "/tiles/wind-south.png" },
-  { id: "wind-west",  suit: "wind", value: "west",  imagePath: "/tiles/wind-west.png" },
-  { id: "wind-north", suit: "wind", value: "north", imagePath: "/tiles/wind-north.png" },
+  { id: "wind-east",  suit: "wind", value: "east"},
+  { id: "wind-south", suit: "wind", value: "south"},
+  { id: "wind-west",  suit: "wind", value: "west"},
+  { id: "wind-north", suit: "wind", value: "north"},
 
   // Dragons 1-3
-  { id: "dragon-white", suit: "dragon", value: "white", imagePath: "/tiles/dragon-white.png" },
-  { id: "dragon-green", suit: "dragon", value: "green", imagePath: "/tiles/dragon-green.png" },
-  { id: "dragon-red",   suit: "dragon", value: "red",   imagePath: "/tiles/dragon-red.png" },
+  { id: "dragon-white", suit: "dragon", value: "white"},
+  { id: "dragon-green", suit: "dragon", value: "green"},
+  { id: "dragon-red",   suit: "dragon", value: "red"},
 ];
 
-export function getTileImagePath(tileId: string): string {
-  const tile = ALL_TILES.find((t) => t.id === tileId);
-  return tile ? tile.imagePath : "";
+import type { TileSkinOption } from "../settings";
+import { TILE_SKIN_EXTENSION } from "../settings";
+
+export function getTileImagePath(tileId: string, skin: TileSkinOption): string {
+  const ext = TILE_SKIN_EXTENSION[skin];
+  return `/tiles/${skin}/${tileId}.${ext}`;
 }

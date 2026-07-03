@@ -1,12 +1,13 @@
 import { getTileImagePath } from "../../data/tiles";
 import { TEMPLATE_IMAGES } from "../../logic/hand-checkers";
 import type { CombinedYakuResult } from "../../logic/hand-sorter";
-import type { LanguageOption } from "../../settings";
+import type { LanguageOption, TileSkinOption } from "../../settings";
 import type { VisualSlot } from "../../logic/hand-checkers";
 
 type CombinedYakuPanelProps = {
   result: CombinedYakuResult | null;
   language: LanguageOption;
+  tileSkin: TileSkinOption;
 };
 
 function displayName(
@@ -16,9 +17,9 @@ function displayName(
   return language === "english" ? yaku.nameEng : yaku.name;
 }
 
-function getSlotImagePath(slot: VisualSlot): string {
+function getSlotImagePath(slot: VisualSlot, skin: TileSkinOption): string {
   return slot.ref.kind === "tile"
-    ? getTileImagePath(slot.ref.tileId)
+    ? getTileImagePath(slot.ref.tileId, skin)
     : TEMPLATE_IMAGES[slot.ref.template];
 }
 
@@ -26,7 +27,7 @@ function getSlotAlt(slot: VisualSlot): string {
   return slot.ref.kind === "tile" ? slot.ref.tileId : slot.ref.template;
 }
 
-function CombinedYakuPanel({ result, language }: CombinedYakuPanelProps) {
+function CombinedYakuPanel({ result, language, tileSkin }: CombinedYakuPanelProps) {
   if (result === null) {
     return (
       <div className="combined-yaku-panel">
@@ -56,7 +57,7 @@ function CombinedYakuPanel({ result, language }: CombinedYakuPanelProps) {
     );
   }
 
-const breakdown = [...wholeHandYaku, ...structuralGroups]
+  const breakdown = [...wholeHandYaku, ...structuralGroups]
     .map((y) => `${displayName(y, language)} (${y.hanValue} han)`)
     .join(" + ");
 
@@ -84,9 +85,9 @@ const breakdown = [...wholeHandYaku, ...structuralGroups]
               <span className="combined-yaku-panel__group-label">{displayName(group, language)}</span>
               <div className="combined-yaku-panel__group-tiles">
                 {group.visual.map((slot, slotIndex) => (
-                  <img
+<img
                     key={slotIndex}
-                    src={getSlotImagePath(slot)}
+                    src={getSlotImagePath(slot, tileSkin)}
                     alt={getSlotAlt(slot)}
                     className="combined-yaku-panel__tile"
                   />

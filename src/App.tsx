@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
+//Fun fact: useLayoutEffect is the same as useEffect, BUT it runs before the page is loaded, aka. there will be not "flash"  where it resizes after it has loaded.
 import type { Tile } from "./data/tiles";
 //Have to add "type" otherwise it errors out, due to Typescript rules.
 import { ALL_HANDS } from "./data/hands";
@@ -8,7 +9,8 @@ import { sortResults, buildCombinedYakuResult } from "./logic/hand-sorter";
 import type { SortMode } from "./logic/hand-sorter";
 //Type used here as "SortMode is only a type"
 import { calculateShanten } from "./logic/shanten";
-import type { LanguageOption } from "./settings";
+import type { LanguageOption, TileSkinOption } from "./settings";
+import { TILE_HEIGHT_DEFAULT, TILE_HEIGHT_MIN, TILE_HEIGHT_MAX } from "./settings";
 import TilePicker from "./components/tile-picker/tile-picker";
 import CurrentHand from "./components/current-hand/current-hand";
 import ResultsList from "./components/results-list/results-list";
@@ -28,17 +30,47 @@ function App() {
   const [roundWind, setRoundWind] = useState<WindValue>("east");
   const [sortMode, setSortMode] = useState<SortMode>("least-steps");
   const [showWaitUpgrades, setShowWaitUpgrades] = useState(false);
+
+  //  Settings
+  // Persist language to localStorage whenever it changes.
+
   const [language, setLanguage] = useState<LanguageOption>(() => {
     return (localStorage.getItem("language") as LanguageOption | null) ?? "japanese";
+  });
+  const [tileSkin, setTileSkin] = useState<TileSkinOption>(() => {
+    return (localStorage.getItem("tileSkin") as TileSkinOption | null) ?? "doman";
+  });
+  const [tileHeight, setTileHeight] = useState<number>(() => {
+    const saved = localStorage.getItem("tileHeight");
+    const parsed = saved !== null ? parseInt(saved, 10) : NaN;
+    if (!isNaN(parsed) && parsed >= TILE_HEIGHT_MIN && parsed <= TILE_HEIGHT_MAX) {
+      return parsed;
+    }
+    return TILE_HEIGHT_DEFAULT;
   });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const settingsContainerRef = useRef<HTMLDivElement>(null);
 
-  //  Settings
-  // Persist language to localStorage whenever it changes.
   useEffect(() => {
     localStorage.setItem("language", language);
   }, [language]);
+
+  useEffect(() => {
+    localStorage.setItem("tileSkin", tileSkin);
+  }, [tileSkin]);
+
+  useEffect(() => {
+    localStorage.setItem("tileHeight", String(tileHeight));
+    document.documentElement.style.setProperty("--tile-height", `${tileHeight}px`);
+  }, [tileHeight]);
+
+ // Apply saved tile height synchronously before first paint, so no
+  // fallback CSS value is needed. useLayoutEffect fires before the browser
+  // paints, eliminating any flash of unsized tiles.
+  useLayoutEffect(() => {
+    document.documentElement.style.setProperty("--tile-height", `${tileHeight}px`);
+  }, []);
+
 
   // Close the settings panel when clicking outside the gear button
   // and the panel together.
@@ -132,6 +164,10 @@ function App() {
             <SettingsPanel
               language={language}
               onLanguageChange={setLanguage}
+              tileSkin={tileSkin}
+              onTileSkinChange={setTileSkin}
+              tileHeight={tileHeight}
+              onTileHeightChange={setTileHeight}
               onClose={() => setIsSettingsOpen(false)}
             />
           )}
@@ -142,12 +178,13 @@ function App() {
         onTileClick={removeTile}
         onReset={clearHand}
         discardDistances={discardDistances}
+        tileSkin={tileSkin}
       />
       <div className="app__main">
-        <TilePicker currentHand={currentHand} onTileClick={addTile} />
+        <TilePicker currentHand={currentHand} onTileClick={addTile} tileSkin={tileSkin} />
         <div className="app__results-panel">
-          <ShantenPanel currentHand={currentHand} />
-          <CombinedYakuPanel result={combinedYaku} language={language} />
+          <ShantenPanel currentHand={currentHand} tileSkin={tileSkin} />
+          <CombinedYakuPanel result={combinedYaku} language={language} tileSkin={tileSkin} />
           <ResultsList
             results={results}
             isOpen={isResultsOpen}
@@ -155,6 +192,7 @@ function App() {
             showWaitUpgrades={showWaitUpgrades}
             onToggleWaitUpgrades={() => setShowWaitUpgrades((prev) => !prev)}
             language={language}
+            tileSkin={tileSkin}
             controls={
               <SortControls
                 seatWind={seatWind}
