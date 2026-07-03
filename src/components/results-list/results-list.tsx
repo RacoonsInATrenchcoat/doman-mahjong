@@ -1,4 +1,5 @@
 import type { ResultEntry } from "../../logic/hand-sorter";
+import type { LanguageOption } from "../../settings";
 import type { VisualSlot } from "../../logic/hand-checkers";
 import { TEMPLATE_IMAGES } from "../../logic/hand-checkers";
 import { getTileImagePath } from "../../data/tiles";
@@ -13,6 +14,7 @@ type ResultsListProps = {
   onToggle: () => void;
   showWaitUpgrades: boolean;
   onToggleWaitUpgrades: () => void;
+  language: LanguageOption;
   controls: ReactNode;
 };
 
@@ -41,6 +43,7 @@ function ResultsList({
   onToggle,
   showWaitUpgrades,
   onToggleWaitUpgrades,
+  language,
   controls,
 }: ResultsListProps) {
   return (
@@ -73,7 +76,8 @@ function ResultsList({
             <ul className="results-list__items">
               {results.map(({ hand, result }) => {
                 const upgrade = showWaitUpgrades ? result.waitUpgrade : undefined;
-                const displayName = upgrade ? upgrade.name : hand.name;
+                const baseName = language === "english" ? hand.nameEng : hand.name;
+                const displayName = upgrade ? upgrade.name : baseName;
                 const displayHan = upgrade ? upgrade.hanValue : hand.hanValue;
                 const displayGap = upgrade ? upgrade.gapDescription : result.gapDescription;
                 return (

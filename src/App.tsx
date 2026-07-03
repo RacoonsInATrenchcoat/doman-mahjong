@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Tile } from "./data/tiles";
 //Have to add "type" otherwise it errors out, due to Typescript rules.
 import { ALL_HANDS } from "./data/hands";
@@ -8,12 +8,15 @@ import { sortResults, buildCombinedYakuResult } from "./logic/hand-sorter";
 import type { SortMode } from "./logic/hand-sorter";
 //Type used here as "SortMode is only a type"
 import { calculateShanten } from "./logic/shanten";
+import type { LanguageOption } from "./settings";
+import { LANGUAGE_OPTIONS } from "./settings";
 import TilePicker from "./components/tile-picker/tile-picker";
 import CurrentHand from "./components/current-hand/current-hand";
 import ResultsList from "./components/results-list/results-list";
 import SortControls from "./components/sort-controls/sort-controls";
 import ShantenPanel from "./components/shanten-panel/shanten-panel";
 import CombinedYakuPanel from "./components/combined-yaku-panel/combined-yaku-panel";
+import SettingsPanel from "./components/settings-panel/settings-panel";
 
 type WindValue = "east" | "south" | "west" | "north";
 //duplication from sort-controls.tsx, will need cleanup leater
@@ -26,6 +29,32 @@ function App() {
   const [roundWind, setRoundWind] = useState<WindValue>("east");
   const [sortMode, setSortMode] = useState<SortMode>("least-steps");
   const [showWaitUpgrades, setShowWaitUpgrades] = useState(false);
+  const [language, setLanguage] = useState<LanguageOption>(() => {
+    return (localStorage.getItem("language") as LanguageOption | null) ?? "japanese";
+  });
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const settingsContainerRef = useRef<HTMLDivElement>(null);
+
+  //  Settings
+  // Persist language to localStorage whenever it changes.
+  useEffect(() => {
+    localStorage.setItem("language", language);
+  }, [language]);
+
+  // Close the settings panel when clicking outside the gear button
+  // and the panel together.
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        settingsContainerRef.current &&
+        !settingsContainerRef.current.contains(e.target as Node)
+      ) {
+        setIsSettingsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const addTile = (tile: Tile) => {
     setCurrentHand((prev) => {
@@ -92,6 +121,22 @@ function App() {
     <div className="app">
       <header className="app__header">
         <h1>Doman Mahjong Hand Checker</h1>
+        <div className="app__settings-container" ref={settingsContainerRef}>
+          <button
+            className="app__settings-button"
+            onClick={() => setIsSettingsOpen((prev) => !prev)}
+            title="Settings"
+          >
+            ⚙
+          </button>
+          {isSettingsOpen && (
+            <SettingsPanel
+              language={language}
+              onLanguageChange={setLanguage}
+              onClose={() => setIsSettingsOpen(false)}
+            />
+          )}
+        </div>
       </header>
       <CurrentHand
         currentHand={currentHand}
@@ -103,13 +148,14 @@ function App() {
         <TilePicker currentHand={currentHand} onTileClick={addTile} />
         <div className="app__results-panel">
           <ShantenPanel currentHand={currentHand} />
-          <CombinedYakuPanel result={combinedYaku} />
+          <CombinedYakuPanel result={combinedYaku} language={language} />
           <ResultsList
             results={results}
             isOpen={isResultsOpen}
             onToggle={toggleResults}
             showWaitUpgrades={showWaitUpgrades}
             onToggleWaitUpgrades={() => setShowWaitUpgrades((prev) => !prev)}
+            language={language}
             controls={
               <SortControls
                 seatWind={seatWind}

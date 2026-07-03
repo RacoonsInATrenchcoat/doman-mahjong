@@ -22,6 +22,9 @@ body {
 
 .app__header {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .app__main {
@@ -35,6 +38,75 @@ body {
 .app__title{
   display: flex;
   gap: 10px;
+}
+
+/* Settings gear button */
+.app__settings-container {
+  position: relative;
+  margin-left: auto;
+}
+
+.app__settings-button {
+  background: none;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #aaa;
+  font-size: 1.1rem;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.app__settings-button:hover {
+  border-color: #aaa;
+  color: #f0f0f0;
+}
+
+/* Settings popover panel */
+.settings-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background-color: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 1rem;
+  min-width: 200px;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.settings-panel__title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #f0f0f0;
+  margin-bottom: 0.75rem;
+}
+
+.settings-panel__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.settings-panel__section-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 0.2rem;
+}
+
+.settings-panel__radio-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: #ccc;
+  cursor: pointer;
+}
+
+.settings-panel__radio-label:hover {
+  color: #f0f0f0;
 }
 
 /* Tile Picker */

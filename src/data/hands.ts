@@ -1,6 +1,7 @@
 export type Hand = {
   id: string;
   name: string;
+  nameEng: string;
   hanValue: number;
   description: string;
 };
@@ -8,44 +9,44 @@ export type Hand = {
 export const ALL_HANDS: Hand[] = [
 
   // 1 Han
-  { id: "pinfu",          name: "Pinfu",                  hanValue: 1,  description: "Four sequences and a non-yakuhai pair." },
-  { id: "tanyao",         name: "Tanyao",                 hanValue: 1,  description: "All tiles are simples. No terminals or honours." },
-  { id: "menzen-tsumo",   name: "Menzen Tsumo",           hanValue: 1, description: "Win by self-draw with a closed hand. Only detectable at 14 tiles." },
-  { id: "iipeikou",       name: "Iipeikou",               hanValue: 1,  description: "Two identical sequences in the same suit." },
-  { id: "yakuhai-white",  name: "Yakuhai (White Dragon)", hanValue: 1,  description: "A triplet of White Dragon tiles." },
-  { id: "yakuhai-green",  name: "Yakuhai (Green Dragon)", hanValue: 1,  description: "A triplet of Green Dragon tiles." },
-  { id: "yakuhai-red",    name: "Yakuhai (Red Dragon)",   hanValue: 1,  description: "A triplet of Red Dragon tiles." },
-  { id: "seat-wind",      name: "Seat Wind",              hanValue: 1,  description: "A triplet of your current seat wind tile." },
-  { id: "round-wind",     name: "Round Wind",             hanValue: 1,  description: "A triplet of the current round wind tile." },
+  { id: "pinfu",          name: "Pinfu",                  nameEng: "All Sequences",              hanValue: 1,  description: "Four sequences and a non-yakuhai pair." },
+  { id: "tanyao",         name: "Tanyao",                 nameEng: "All Simples",                hanValue: 1,  description: "All tiles are simples. No terminals or honours." },
+  { id: "iipeikou",       name: "Iipeikou",               nameEng: "Pure Double Chi",            hanValue: 1,  description: "Two identical sequences in the same suit." },
+  { id: "yakuhai-white",  name: "Yakuhai (White Dragon)", nameEng: "Dragon Tile (White)",        hanValue: 1,  description: "A triplet of White Dragon tiles." },
+  { id: "yakuhai-green",  name: "Yakuhai (Green Dragon)", nameEng: "Dragon Tile (Green)",        hanValue: 1,  description: "A triplet of Green Dragon tiles." },
+  { id: "yakuhai-red",    name: "Yakuhai (Red Dragon)",   nameEng: "Dragon Tile (Red)",          hanValue: 1,  description: "A triplet of Red Dragon tiles." },
+  { id: "seat-wind",      name: "Seat Wind",              nameEng: "Seat Wind",                  hanValue: 1,  description: "A triplet of your current seat wind tile." },
+  { id: "round-wind",     name: "Round Wind",             nameEng: "Round Wind",                 hanValue: 1,  description: "A triplet of the current round wind tile." },
+  { id: "menzen-tsumo",   name: "Menzen Tsumo",           nameEng: "Fully Concealed Hand",       hanValue: 1,  description: "Win by self-draw with a closed hand. Only detectable at 14 tiles." },
 
   // 2 Han
-  { id: "chiitoitsu",       name: "Chiitoitsu",         hanValue: 2,  description: "Seven different pairs." },
-  { id: "sanshoku-doujun",  name: "Sanshoku Doujun",    hanValue: 2,  description: "The same sequence in all three suits." },
-  { id: "ittsuu",           name: "Ittsuu",             hanValue: 2,  description: "Sequences of 1-2-3, 4-5-6, and 7-8-9 in the same suit." },
-  { id: "toitoi",           name: "Toitoi",             hanValue: 2,  description: "All four sets are triplets." },
-  { id: "sanankou",         name: "Sanankou",           hanValue: 2,  description: "Three concealed triplets." },
-  { id: "sanshoku-doukou",  name: "Sanshoku Doukou",    hanValue: 2,  description: "The same triplet in all three suits." },
-  { id: "shousangen",       name: "Shousangen",         hanValue: 2,  description: "Triplets of two dragons and a pair of the third." },
-  { id: "chanta",           name: "Chanta",             hanValue: 2, description: "Every set and the pair contains a terminal or honour tile." },
-  { id: "honroutou",       name: "Honroutou",       hanValue: 2,  description: "All tiles are terminals and honours, no simples." },
+  { id: "chiitoitsu",       name: "Chiitoitsu",         nameEng: "Seven Pairs",                  hanValue: 2,  description: "Seven different pairs." },
+  { id: "sanshoku-doujun",  name: "Sanshoku Doujun",    nameEng: "Mixed Triple Chi",             hanValue: 2,  description: "The same sequence in all three suits." },
+  { id: "ittsuu",           name: "Ittsuu",             nameEng: "Pure Straight",                hanValue: 2,  description: "Sequences of 1-2-3, 4-5-6, and 7-8-9 in the same suit." },
+  { id: "toitoi",           name: "Toitoi",             nameEng: "All Triplets",                 hanValue: 2,  description: "All four sets are triplets." },
+  { id: "sanankou",         name: "Sanankou",           nameEng: "Three Concealed Triplets",     hanValue: 2,  description: "Three concealed triplets." },
+  { id: "sanshoku-doukou",  name: "Sanshoku Doukou",    nameEng: "Triple Triplets",              hanValue: 2,  description: "The same triplet in all three suits." },
+  { id: "shousangen",       name: "Shousangen",         nameEng: "Little Three Dragons",         hanValue: 2,  description: "Triplets of two dragons and a pair of the third." },
+  { id: "ryanpeikou",       name: "Ryanpeikou",         nameEng: "Twice Pure Double Chi",        hanValue: 3,  description: "Two separate pairs of identical sequences." },
 
   // 3 Han
-  { id: "honitsu",        name: "Honitsu", hanValue: 3, description: "One suit only, plus any honours." },
-  { id: "ryanpeikou",     name: "Ryanpeikou",             hanValue: 3,  description: "Two separate pairs of identical sequences." },
-  { id: "junchan",        name: "Junchan", hanValue: 3, description: "Every set and the pair contains a terminal tile. No honours allowed." },
+  { id: "honitsu", name: "Honitsu", nameEng: "Half Flush",   hanValue: 3, description: "One suit only, plus any honours." },
+  { id: "chanta",  name: "Chanta",  nameEng: "Outside Hand", hanValue: 2, description: "Every set and the pair contains a terminal or honour tile." },
+  { id: "junchan", name: "Junchan", nameEng: "Terminals in All Groups", hanValue: 3, description: "Every set and the pair contains a terminal tile. No honours allowed." },
 
-  // 6 Han, checking only for closed hand.
-  { id: "chinitsu",       name: "Chinitsu", hanValue: 6, description: "One suit only, no honours at all." },
+  // 6 Han
+  { id: "chinitsu", name: "Chinitsu", nameEng: "Full Flush", hanValue: 6, description: "One suit only, no honours at all." },
 
   // Yakuman (represented as 13 Han)
-  { id: "kokushi",        name: "Kokushi Musou",  hanValue: 13, description: "One of each terminal and honour tile, plus one duplicate." },
-  { id: "suuankou",       name: "Suuankou",       hanValue: 13, description: "Four concealed triplets." },
-  { id: "daisangen",      name: "Daisangen",      hanValue: 13, description: "Triplets of all three dragon tiles." },
-  { id: "shousuushi",     name: "Shousuushi",     hanValue: 13, description: "Triplets of three winds and a pair of the fourth." },
-  { id: "daisuushi",      name: "Daisuushi",      hanValue: 13, description: "Triplets of all four wind tiles." },
-  { id: "tsuuiisou",      name: "Tsuuiisou",      hanValue: 13, description: "All tiles are honours. No suited tiles at all." },
-  { id: "chinroutou",     name: "Chinroutou",      hanValue: 13, description: "All tiles are terminals. 1s and 9s only." },
-  { id: "ryuuiisou",      name: "Ryuuiisou",      hanValue: 13, description: "All tiles are from the set: 2, 3, 4, 6, 8 of Sou and Green Dragon." },
-  { id: "chuuren-poutou", name: "Chuuren Poutou", hanValue: 13, description: "1-1-1-2-3-4-5-6-7-8-9-9-9 in one suit, plus one duplicate." },
+  { id: "kokushi",        name: "Kokushi Musou",  nameEng: "Thirteen Orphans",           hanValue: 13, description: "One of each terminal and honour tile, plus one duplicate." },
+  { id: "suuankou",       name: "Suuankou",       nameEng: "Four Concealed Triplets",    hanValue: 13, description: "Four concealed triplets." },
+  { id: "daisangen",      name: "Daisangen",      nameEng: "Big Three Dragons",          hanValue: 13, description: "Triplets of all three dragon tiles." },
+  { id: "shousuushi",     name: "Shousuushi",     nameEng: "Little Four Winds",          hanValue: 13, description: "Triplets of three winds and a pair of the fourth." },
+  { id: "daisuushi",      name: "Daisuushi",      nameEng: "Big Four Winds",             hanValue: 13, description: "Triplets of all four wind tiles." },
+  { id: "tsuuiisou",      name: "Tsuuiisou",      nameEng: "All Honors",                 hanValue: 13, description: "All tiles are honours. No suited tiles at all." },
+  { id: "chinroutou",     name: "Chinroutou",     nameEng: "All Terminals",              hanValue: 13, description: "All tiles are terminals. 1s and 9s only." },
+  { id: "honroutou",      name: "Honroutou",      nameEng: "All Terminals and Honors",   hanValue: 2,  description: "All tiles are terminals and honours, no simples." },
+  { id: "ryuuiisou",      name: "Ryuuiisou",      nameEng: "All Green",                  hanValue: 13, description: "All tiles are from the set: 2, 3, 4, 6, 8 of Sou and Green Dragon." },
+  { id: "chuuren-poutou", name: "Chuuren Poutou", nameEng: "Nine Gates",                 hanValue: 13, description: "1-1-1-2-3-4-5-6-7-8-9-9-9 in one suit, plus one duplicate." },
 
 ];
