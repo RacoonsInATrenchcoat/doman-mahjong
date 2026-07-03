@@ -12,10 +12,9 @@ import {
   buildTemplateSlots,
   computeChiitoitsuTileCost,
   KOKUSHI_TILES,
-  TEMPLATE_IMAGES,
   classifySequenceWait,
 } from "./tile-utils";
-import type { TemplateId, VisualSlot } from "./tile-utils";
+import type { VisualSlot } from "./tile-utils";
 import { calculateStandardShanten } from "./shanten/standard";
 import type { ShantenGroup } from "./shanten/standard";
 import { calculateShanten } from "./shanten";
