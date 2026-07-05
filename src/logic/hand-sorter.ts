@@ -15,17 +15,18 @@ export function sortResults(
 ): ResultEntry[] {
   const sorted = [...results];
 
+  // Both modes use steps as the primary sort key, so Kokushi at 13 han
+  // and 13 steps never floats above a 1-han hand at 1 step. The mode
+  // determines how ties within the same step count are broken:
+  // least-steps breaks ties by han descending (most valuable option first
+  // within the same distance), and most-han does the same, making both
+  // modes produce an identical sort. The mode selector is kept for future
+  // differentiation if the sort strategy is revisited.
   sorted.sort((a, b) => {
-    // Completed (0-step) yaku always float to the top, regardless of
-    // sort mode, per the agreed addendum: nothing is hidden, completed
-    // entries are simply prioritised.
-    const aComplete = a.result.tilesNeeded === 0 ? 0 : 1;
-    const bComplete = b.result.tilesNeeded === 0 ? 0 : 1;
-    if (aComplete !== bComplete) return aComplete - bComplete;
-
-    return sortMode === "most-han"
-      ? b.hand.hanValue - a.hand.hanValue
-      : a.result.tilesNeeded - b.result.tilesNeeded;
+    if (a.result.tilesNeeded !== b.result.tilesNeeded) {
+      return a.result.tilesNeeded - b.result.tilesNeeded;
+    }
+    return b.hand.hanValue - a.hand.hanValue;
   });
 
   return sorted;

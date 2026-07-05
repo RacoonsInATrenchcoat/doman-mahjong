@@ -12,8 +12,6 @@ type ResultsListProps = {
   results: ResultEntry[] | null;
   isOpen: boolean;
   onToggle: () => void;
-  showWaitUpgrades: boolean;
-  onToggleWaitUpgrades: () => void;
   language: LanguageOption;
   tileSkin: TileSkinOption;
   controls: ReactNode;
@@ -42,8 +40,6 @@ function ResultsList({
   results,
   isOpen,
   onToggle,
-  showWaitUpgrades,
-  onToggleWaitUpgrades,
   language,
   tileSkin,
   controls,
@@ -54,14 +50,6 @@ function ResultsList({
         <h2>Results</h2>
         <div className="results-list__header-middle">
           {controls}
-          <label className="results-list__wait-upgrade-toggle">
-            <input
-              type="checkbox"
-              checked={showWaitUpgrades}
-              onChange={onToggleWaitUpgrades}
-            />
-            Wait upgrades
-          </label>
         </div>
         <button className="results-list__toggle" onClick={onToggle}>
           {isOpen ? "Hide" : "Show"}
@@ -77,7 +65,7 @@ function ResultsList({
           ) : (
             <ul className="results-list__items">
               {results.map(({ hand, result }) => {
-                const upgrade = showWaitUpgrades ? result.waitUpgrade : undefined;
+                const upgrade = result.waitUpgrade;
                 const baseName = language === "english" ? hand.nameEng : hand.name;
                 const displayName = upgrade ? upgrade.name : baseName;
                 const displayHan = upgrade ? upgrade.hanValue : hand.hanValue;

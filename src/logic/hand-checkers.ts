@@ -997,15 +997,23 @@ function checkPinfu(
     "dragon-white", "dragon-green", "dragon-red",
     `wind-${seatWind}`, `wind-${roundWind}`,
   ]);
-  const { distance, decompositions } = calculateStandardShanten(hand);
+  const { standard, chiitoitsu } = calculateShanten(hand);
+  const distance = standard.distance;
+  const { decompositions } = standard;
 
   if (distance > 0) {
-    // Not yet tenpai, the eventual wait shape cannot be known yet, so
-    // this falls back to the original approximation: no honours present,
-    // and a valid non-yakuhai pair candidate exists somewhere. May
-    // occasionally show tilesNeeded: 0 for a hand that would not actually
-    // qualify once it reaches tenpai, but will never miss a genuine
-    // candidate while still under construction.
+    // If the hand is at least as close to Chiitoitsu as to Standard shape,
+    // it is pursuing a pairs structure. Pinfu requires sequences and cannot
+    // apply to a Chiitoitsu-shaped hand under any decomposition.
+    if (chiitoitsu.distance <= distance) {
+      return {
+        possible: true,
+        tilesNeeded: distance + 1,
+        gapDescription: "Hand is closer to Seven Pairs (Chiitoitsu) than a sequence-based hand. Pinfu requires sequences only.",
+        visual: buildHeldSlots(hand),
+      };
+    }
+
     const honours = hand.filter((t) => isHonour(t));
     const nonHonours = hand.filter((t) => !isHonour(t));
     if (honours.length > 0) {

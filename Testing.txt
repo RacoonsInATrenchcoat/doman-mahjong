@@ -1,0 +1,81 @@
+Feedback:
+
+Round 1:
+
+HIGH PRIORITY
+Pinfu detection is wrong. It needs to take into account Fu calculation, because that's what makes a hand pinfu
+https://riichi.wiki/Pinfu#Definition
+https://riichi.wiki/Fu
+- Done
+Some yaku are missing: Ryanpeikou, honroutou, chanta, junchan
+https://riichi.wiki/Ryanpeikou
+- Done
+https://riichi.wiki/Honroutou
+- Done
+https://riichi.wiki/Chanta
+- Done
+https://riichi.wiki/Junchantaiyaochuu
+- Done
+Wait dependent yaku are missing (Chuuren Kyuumen, Kokushi Jusanmen, Suuankou Tanki)
+https://riichi.wiki/Chuuren_poutou#Nine_tile_wait
+- Done
+https://riichi.wiki/Kokushi_musou#Kokushi_musou_13-way_wait
+- Done
+https://riichi.wiki/Suuankou#Tanki\
+- Done
+Consider yaku compatibility for grouping yakus. Rarely a hand only consists of one yaku
+https://riichi.wiki/Yaku_compatibility
+Sorting needs to combine both criteria. When sorting by least steps, display first the higher yaku count; when sorting by yaku, display first the ones with least steps
+No need to display yakus if they're 7+ steps away (because in that scenario you can go for chiitoitsu)
+- Disagree and skipped, rather have all information shown, including the Chiitoitsu, then have the person make a decision.
+No need to display other yakus if you're 0 steps away from something
+- Done
+
+BUGS
+You can add more than 13 tiles to the hand
+- Done
+Honitsu detection is wrong (hand with all honors is wrongly detected as Honitsu)
+- Done
+
+MINOR ISSUES
+If a yaku can only be obtained with a closed hand (or if it gives less han with an open hand), display it in the UI
+- Skipped, problem due to internal logic for a hand detection.
+No need to order by least han
+- Done
+Instead of steps, display shanten count or tenpai
+https://riichi.wiki/Shanten
+- Done, separate Shanten Calculation is implemented.
+Spelling: Iipeiko -> Iipeikou, Ittsu -> Ittsuu
+- Done
+
+NICE TO HAVE
+Option for using regular mahjong skin for the tiles
+- Done
+Option for using English names of the yaku
+- Done
+
+Round 2:
+
+FEATURE REQUEST:
+
+yakuman score calculation is wrong because it's using han
+for instance: Honitsu (3 han) + Chinitsu (6 han) + Iipeikou (1 han) + Toitoi (2 han) + Sanankou (2 han) + Suuankou (13 han) = 27 han
+the actual value of this hand is just suuankou, because that yaku is a yakuman. once you reach yakuman status (either by obtaining a yakuman itself or by getting to 13 han through regular yaku (counted yakuman)), the rest of the hand is not counted
+you can only upgrade a yakuman if you get more yakuman alongside it, turning it into a double, triple, etc... yakuman. for instance, if you get suuankou with all honours (tsuuisou), that hand is worth a double yakuman (equivalent of 24 han)
+note that counted yakuman cannot be upgraded, even if you somehow manage to get 24 han in a hand without a yakuman (eg. dora), it's still just 1 yakuman (= 13 han)
+daisuushi is counted as a yakuman when in reality its a double yakuman (because it includes shousuushi which is also a yakuman, but they are mutually exclusive when calculating the score)
+
+fu calculation should be visible together with the han value, because with less than 5 han that impacts the actual final score
+
+BUGS:
+
+pinfu is still a bit strange, i got a chiitoitsu hand labeled as pinfu even though it has no sequences
+- Done-ish. Depends on the Fu calculation, but the rule is often mis-interpreted being "all sequences", which is a problem.
+sorting is still wonky. i put in a hand with all sequences and if i sort by han i get suggested kokushi musou even though i only have 1 tile for it (13 steps away)
+i still think it doesnt really make sense to sort by han in general, just by steps. if your hand is already basically complete, you wouldn't want to pivot into a completely different hand shape. for me, the only sorting that makes sense is by lowest number of steps, and then within the same number of steps order by highest han
+- Partially done. Fixed the calculation, but left the "most han" in, due to it being useful when the user decides to want a "risky" hand.
+
+im still missing a label next to yakus like pinfu or iipeikou to indicate that those yaku can only be obtained with a closed hand. in the case of yaku like sanshoku doujun (that get 1 extra yaku if the hand is closed), a label next to it indicating so would also be nice. no need to include either option as a separate possible yaku/hand, just a label next to the yaku in the results list
+- Closed only, cannot do with current logic and scope.
+i like the "wait upgrades" toggle but i think instead of it being a toggle, those upgrades should always be visible
+- Done

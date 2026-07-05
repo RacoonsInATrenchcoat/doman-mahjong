@@ -29,7 +29,6 @@ function App() {
   const [seatWind, setSeatWind] = useState<WindValue>("east");
   const [roundWind, setRoundWind] = useState<WindValue>("east");
   const [sortMode, setSortMode] = useState<SortMode>("least-steps");
-  const [showWaitUpgrades, setShowWaitUpgrades] = useState(false);
 
   //  Settings
   // Persist language to localStorage whenever it changes.
@@ -189,8 +188,6 @@ function App() {
             results={results}
             isOpen={isResultsOpen}
             onToggle={toggleResults}
-            showWaitUpgrades={showWaitUpgrades}
-            onToggleWaitUpgrades={() => setShowWaitUpgrades((prev) => !prev)}
             language={language}
             tileSkin={tileSkin}
             controls={
