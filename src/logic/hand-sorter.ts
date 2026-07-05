@@ -33,8 +33,8 @@ export function sortResults(
 }
 
 export type CombinedYakuResult = {
-  wholeHandYaku: { name: string; nameEng: string; hanValue: number }[];
-  structuralGroups: { name: string; nameEng: string; hanValue: number; visual: VisualSlot[] }[];
+  wholeHandYaku: { id: string; name: string; nameEng: string; hanValue: number; yakumanUnits: number; yakumanUnitsRiichi: number }[];
+  structuralGroups: { id: string; name: string; nameEng: string; hanValue: number; yakumanUnits: number; yakumanUnitsRiichi: number; visual: VisualSlot[] }[];
   totalHan: number;
   inactiveTileIds: string[];
 };
@@ -50,15 +50,15 @@ export function buildCombinedYakuResult(
 ): CombinedYakuResult {
   const complete = results.filter((r) => r.result.tilesNeeded === 0);
 
-const wholeHandYaku: { name: string; nameEng: string; hanValue: number }[] = [];
-  const structuralGroups: { name: string; nameEng: string; hanValue: number; visual: VisualSlot[] }[] = [];
+const wholeHandYaku: { id: string; name: string; nameEng: string; hanValue: number; yakumanUnits: number; yakumanUnitsRiichi: number }[] = [];
+  const structuralGroups: { id: string; name: string; nameEng: string; hanValue: number; yakumanUnits: number; yakumanUnitsRiichi: number; visual: VisualSlot[] }[] = [];
   const claimedCounts = new Map<string, number>();
 
   for (const { hand, result } of complete) {
     if (WHOLE_HAND_YAKU_IDS.has(hand.id)) {
-      wholeHandYaku.push({ name: hand.name, nameEng: hand.nameEng, hanValue: hand.hanValue });
+      wholeHandYaku.push({ id: hand.id, name: hand.name, nameEng: hand.nameEng, hanValue: hand.hanValue, yakumanUnits: hand.yakumanUnits, yakumanUnitsRiichi: hand.yakumanUnitsRiichi });
     } else {
-      structuralGroups.push({ name: hand.name, nameEng: hand.nameEng, hanValue: hand.hanValue, visual: result.visual });
+      structuralGroups.push({ id: hand.id, name: hand.name, nameEng: hand.nameEng, hanValue: hand.hanValue, yakumanUnits: hand.yakumanUnits, yakumanUnitsRiichi: hand.yakumanUnitsRiichi, visual: result.visual });
     }
     for (const slot of result.visual) {
       if (slot.satisfied && slot.ref.kind === "tile") {

@@ -1,13 +1,15 @@
 import { getTileImagePath } from "../../data/tiles";
 import { TEMPLATE_IMAGES } from "../../logic/hand-checkers";
 import type { CombinedYakuResult } from "../../logic/hand-sorter";
-import type { LanguageOption, TileSkinOption } from "../../settings";
+import type { LanguageOption, TileSkinOption, ScoringRuleset } from "../../settings";
+import { calculateScore, SCORE_CATEGORY_LABELS } from "../../logic/score-calculator";
 import type { VisualSlot } from "../../logic/hand-checkers";
 
 type CombinedYakuPanelProps = {
   result: CombinedYakuResult | null;
   language: LanguageOption;
   tileSkin: TileSkinOption;
+  scoringRuleset: ScoringRuleset;
 };
 
 function displayName(
@@ -27,7 +29,7 @@ function getSlotAlt(slot: VisualSlot): string {
   return slot.ref.kind === "tile" ? slot.ref.tileId : slot.ref.template;
 }
 
-function CombinedYakuPanel({ result, language, tileSkin }: CombinedYakuPanelProps) {
+function CombinedYakuPanel({ result, language, tileSkin, scoringRuleset }: CombinedYakuPanelProps) {
   if (result === null) {
     return (
       <div className="combined-yaku-panel">
@@ -57,9 +59,30 @@ function CombinedYakuPanel({ result, language, tileSkin }: CombinedYakuPanelProp
     );
   }
 
-  const breakdown = [...wholeHandYaku, ...structuralGroups]
-    .map((y) => `${displayName(y, language)} (${y.hanValue} han)`)
-    .join(" + ");
+  // Built a minimal ResultEntry-compatible list from what CombinedYakuResult carries,
+  // sufficient for calculateScore to work without needing the full Hand objects.
+  // This uses an inline type that matches what calculateScore expects.
+  const allCompleteYaku = [...wholeHandYaku, ...structuralGroups];
+  const scoreResult = calculateScore(
+    allCompleteYaku.map((y) => ({
+      hand: {
+        id: y.id,
+        name: y.name,
+        nameEng: y.nameEng,
+        hanValue: y.hanValue,
+        description: "",
+        yakumanUnits: y.yakumanUnits,
+        yakumanUnitsRiichi: y.yakumanUnitsRiichi,
+      },
+      result: { possible: true, tilesNeeded: 0, gapDescription: "", visual: [] },
+    })),
+    scoringRuleset,
+    language
+  );
+  const categoryLabel = SCORE_CATEGORY_LABELS[scoreResult.category];
+
+
+  const breakdown = scoreResult.contributingNames.join(" + ");
 
   return (
     <div className="combined-yaku-panel">
@@ -73,7 +96,10 @@ function CombinedYakuPanel({ result, language, tileSkin }: CombinedYakuPanelProp
             ))}
           </div>
           <p className="combined-yaku-panel__total">
-            {breakdown} = {totalHan} han
+            {breakdown}
+            {scoreResult.isYakuman
+              ? ` = ${categoryLabel}`
+              : ` = ${scoreResult.regularHan} han${categoryLabel ? ` (${categoryLabel})` : ""}`}
           </p>
         </div>
       )}
@@ -85,7 +111,7 @@ function CombinedYakuPanel({ result, language, tileSkin }: CombinedYakuPanelProp
               <span className="combined-yaku-panel__group-label">{displayName(group, language)}</span>
               <div className="combined-yaku-panel__group-tiles">
                 {group.visual.map((slot, slotIndex) => (
-<img
+                  <img
                     key={slotIndex}
                     src={getSlotImagePath(slot, tileSkin)}
                     alt={getSlotAlt(slot)}
@@ -116,7 +142,10 @@ function CombinedYakuPanel({ result, language, tileSkin }: CombinedYakuPanelProp
 
       {wholeHandYaku.length === 0 && (
         <p className="combined-yaku-panel__total">
-          {breakdown} = {totalHan} han
+          {breakdown}
+          {scoreResult.isYakuman
+            ? ` = ${categoryLabel}`
+            : ` = ${scoreResult.regularHan} han${categoryLabel ? ` (${categoryLabel})` : ""}`}
         </p>
       )}
     </div>

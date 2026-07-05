@@ -9,7 +9,7 @@ import { sortResults, buildCombinedYakuResult } from "./logic/hand-sorter";
 import type { SortMode } from "./logic/hand-sorter";
 //Type used here as "SortMode is only a type"
 import { calculateShanten } from "./logic/shanten";
-import type { LanguageOption, TileSkinOption } from "./settings";
+import type { LanguageOption, TileSkinOption, ScoringRuleset } from "./settings";
 import { TILE_HEIGHT_DEFAULT, TILE_HEIGHT_MIN, TILE_HEIGHT_MAX } from "./settings";
 import TilePicker from "./components/tile-picker/tile-picker";
 import CurrentHand from "./components/current-hand/current-hand";
@@ -47,7 +47,12 @@ function App() {
     }
     return TILE_HEIGHT_DEFAULT;
   });
+
+  const [scoringRuleset, setScoringRuleset] = useState<ScoringRuleset>(() => {
+    return (localStorage.getItem("scoringRuleset") as ScoringRuleset | null) ?? "doman";
+  });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
   const settingsContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -63,7 +68,11 @@ function App() {
     document.documentElement.style.setProperty("--tile-height", `${tileHeight}px`);
   }, [tileHeight]);
 
- // Apply saved tile height synchronously before first paint, so no
+  useEffect(() => {
+    localStorage.setItem("scoringRuleset", scoringRuleset);
+  }, [scoringRuleset]);
+
+  // Apply saved tile height synchronously before first paint, so no
   // fallback CSS value is needed. useLayoutEffect fires before the browser
   // paints, eliminating any flash of unsized tiles.
   useLayoutEffect(() => {
@@ -167,6 +176,8 @@ function App() {
               onTileSkinChange={setTileSkin}
               tileHeight={tileHeight}
               onTileHeightChange={setTileHeight}
+              scoringRuleset={scoringRuleset}
+              onScoringRulesetChange={setScoringRuleset}
               onClose={() => setIsSettingsOpen(false)}
             />
           )}
@@ -183,7 +194,7 @@ function App() {
         <TilePicker currentHand={currentHand} onTileClick={addTile} tileSkin={tileSkin} />
         <div className="app__results-panel">
           <ShantenPanel currentHand={currentHand} tileSkin={tileSkin} />
-          <CombinedYakuPanel result={combinedYaku} language={language} tileSkin={tileSkin} />
+          <CombinedYakuPanel result={combinedYaku} language={language} tileSkin={tileSkin} scoringRuleset={scoringRuleset} />
           <ResultsList
             results={results}
             isOpen={isResultsOpen}

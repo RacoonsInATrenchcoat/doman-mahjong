@@ -28,3 +28,14 @@ export const TILE_HEIGHT_DEFAULT = 54;
 export const TILE_HEIGHT_MIN = 27;
 //Max value on the slider
 export const TILE_HEIGHT_MAX = 81;
+
+// Deliberately designed as a named-option selector rather than a boolean,
+// so future rule differences (beyond just yakuman doubling) can be added
+// to this type without restructuring anything. Mirrors the same pattern
+// used for LanguageOption and TileSkinOption.
+export type ScoringRuleset = "doman" | "riichi";
+
+export const SCORING_RULESET_OPTIONS: { value: ScoringRuleset; label: string }[] = [
+  { value: "doman",  label: "Doman Mahjong" },
+  { value: "riichi", label: "Riichi Mahjong" },
+  ];

@@ -1,10 +1,11 @@
-import type { LanguageOption, TileSkinOption } from "../../settings";
+import type { LanguageOption, TileSkinOption, ScoringRuleset } from "../../settings";
 import {
   LANGUAGE_OPTIONS,
   TILE_SKIN_OPTIONS,
   TILE_HEIGHT_MIN,
   TILE_HEIGHT_MAX,
   TILE_HEIGHT_DEFAULT,
+  SCORING_RULESET_OPTIONS,
 } from "../../settings";
 
 type SettingsPanelProps = {
@@ -14,6 +15,8 @@ type SettingsPanelProps = {
   onTileSkinChange: (value: TileSkinOption) => void;
   tileHeight: number;
   onTileHeightChange: (value: number) => void;
+  scoringRuleset: ScoringRuleset;
+  onScoringRulesetChange: (value: ScoringRuleset) => void;
   onClose: () => void;
 };
 
@@ -24,6 +27,8 @@ function SettingsPanel({
   onTileSkinChange,
   tileHeight,
   onTileHeightChange,
+  scoringRuleset,
+  onScoringRulesetChange,
 }: SettingsPanelProps) {
   const heightPercent = Math.round((tileHeight / TILE_HEIGHT_DEFAULT) * 100);
 
@@ -57,6 +62,22 @@ function SettingsPanel({
               value={option.value}
               checked={tileSkin === option.value}
               onChange={() => onTileSkinChange(option.value)}
+            />
+            {option.label}
+          </label>
+        ))}
+      </div>
+
+      <div className="settings-panel__section">
+        <p className="settings-panel__section-label">Scoring rules</p>
+        {SCORING_RULESET_OPTIONS.map((option) => (
+          <label key={option.value} className="settings-panel__radio-label">
+            <input
+              type="radio"
+              name="scoring-ruleset"
+              value={option.value}
+              checked={scoringRuleset === option.value}
+              onChange={() => onScoringRulesetChange(option.value)}
             />
             {option.label}
           </label>
