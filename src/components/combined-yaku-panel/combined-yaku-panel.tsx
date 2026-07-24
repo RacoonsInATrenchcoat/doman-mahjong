@@ -2,14 +2,19 @@ import { getTileImagePath } from "../../data/tiles";
 import { TEMPLATE_IMAGES } from "../../logic/hand-checkers";
 import type { CombinedYakuResult } from "../../logic/hand-sorter";
 import type { LanguageOption, TileSkinOption, ScoringRuleset } from "../../settings";
-import { calculateScore, SCORE_CATEGORY_LABELS } from "../../logic/score-calculator";
+import { calculateScore, calculateFu, SCORE_CATEGORY_LABELS } from "../../logic/score-calculator";
+import type { ShantenGroup } from "../../logic/shanten/standard";
 import type { VisualSlot } from "../../logic/hand-checkers";
 
 type CombinedYakuPanelProps = {
   result: CombinedYakuResult | null;
+  shanten: import("../../logic/shanten").ShantenResult | null;
   language: LanguageOption;
   tileSkin: TileSkinOption;
   scoringRuleset: ScoringRuleset;
+  isTsumo: boolean;
+  seatWind: string;
+  roundWind: string;
 };
 
 function displayName(
@@ -29,7 +34,16 @@ function getSlotAlt(slot: VisualSlot): string {
   return slot.ref.kind === "tile" ? slot.ref.tileId : slot.ref.template;
 }
 
-function CombinedYakuPanel({ result, language, tileSkin, scoringRuleset }: CombinedYakuPanelProps) {
+function CombinedYakuPanel({
+  result,
+  shanten,
+  language,
+  tileSkin,
+  scoringRuleset,
+  isTsumo,
+  seatWind,
+  roundWind,
+}: CombinedYakuPanelProps) {
   if (result === null) {
     return (
       <div className="combined-yaku-panel">
@@ -38,7 +52,7 @@ function CombinedYakuPanel({ result, language, tileSkin, scoringRuleset }: Combi
     );
   }
 
-  const { wholeHandYaku, structuralGroups, totalHan, inactiveTileIds } = result;
+  const { wholeHandYaku, structuralGroups, inactiveTileIds } = result;
   const hasAnything = wholeHandYaku.length > 0 || structuralGroups.length > 0;
 
   if (!hasAnything) {
@@ -63,6 +77,24 @@ function CombinedYakuPanel({ result, language, tileSkin, scoringRuleset }: Combi
   // sufficient for calculateScore to work without needing the full Hand objects.
   // This uses an inline type that matches what calculateScore expects.
   const allCompleteYaku = [...wholeHandYaku, ...structuralGroups];
+
+  // Determine fu from the Standard shape decomposition when available.
+  // Fu is only meaningful below mangan (less than 5 han from regular yaku),
+  // but we calculate it regardless and let calculateScore decide whether
+  // to use it for threshold checks.
+  const standardGroups: ShantenGroup[] | null =
+    shanten !== null && shanten.standard.decompositions.length > 0
+      ? shanten.standard.decompositions[0]
+      : null;
+
+  const isPinfu = allCompleteYaku.some((y) => y.id === "pinfu");
+  const isChiitoitsu = allCompleteYaku.some((y) => y.id === "chiitoitsu");
+
+  const fuResult =
+    standardGroups !== null
+      ? calculateFu(standardGroups, isChiitoitsu, isPinfu, isTsumo, seatWind, roundWind)
+      : { total: 30, isProjected: true };
+
   const scoreResult = calculateScore(
     allCompleteYaku.map((y) => ({
       hand: {
@@ -77,10 +109,11 @@ function CombinedYakuPanel({ result, language, tileSkin, scoringRuleset }: Combi
       result: { possible: true, tilesNeeded: 0, gapDescription: "", visual: [] },
     })),
     scoringRuleset,
-    language
+    language,
+    fuResult.total
   );
-  const categoryLabel = SCORE_CATEGORY_LABELS[scoreResult.category];
 
+  const categoryLabel = SCORE_CATEGORY_LABELS[scoreResult.category];
 
   const breakdown = scoreResult.contributingNames.join(" + ");
 
@@ -99,7 +132,9 @@ function CombinedYakuPanel({ result, language, tileSkin, scoringRuleset }: Combi
             {breakdown}
             {scoreResult.isYakuman
               ? ` = ${categoryLabel}`
-              : ` = ${scoreResult.regularHan} han${categoryLabel ? ` (${categoryLabel})` : ""}`}
+              : scoreResult.category === "regular"
+                ? ` = ${scoreResult.regularHan} han ${scoreResult.fu} fu${fuResult.isProjected ? " (projected ron)" : ""}`
+                : ` = ${scoreResult.regularHan} han ${scoreResult.fu} fu (${categoryLabel})`}
           </p>
         </div>
       )}
@@ -145,7 +180,9 @@ function CombinedYakuPanel({ result, language, tileSkin, scoringRuleset }: Combi
           {breakdown}
           {scoreResult.isYakuman
             ? ` = ${categoryLabel}`
-            : ` = ${scoreResult.regularHan} han${categoryLabel ? ` (${categoryLabel})` : ""}`}
+            : scoreResult.category === "regular"
+              ? ` = ${scoreResult.regularHan} han ${scoreResult.fu} fu${fuResult.isProjected ? " (projected ron)" : ""}`
+              : ` = ${scoreResult.regularHan} han ${scoreResult.fu} fu (${categoryLabel})`}
         </p>
       )}
     </div>

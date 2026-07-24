@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
-import type { Tile } from "../../data/tiles";
 import { getTileImagePath } from "../../data/tiles";
 import { TEMPLATE_IMAGES } from "../../logic/hand-checkers";
 import type { ShapeName, ShantenResult, ShapeResult, ShantenSlot, ShantenGroup } from "../../logic/shanten";
 import type { TileSkinOption } from "../../settings";
 
 type ShantenPanelProps = {
-  currentHand: Tile[];
+  shanten: ShantenResult | null;
   tileSkin: TileSkinOption;
 };
 
@@ -33,24 +32,21 @@ const SHAPE_LABELS: Record<ShapeName, string> = {
   kokushi: "Kokushi Shape",
 };
 
-function ShantenPanel({ currentHand, tileSkin }: ShantenPanelProps) {
-  const [result, setResult] = useState<ShantenResult | null>(null);
+function ShantenPanel({ shanten, tileSkin }: ShantenPanelProps) {
   const [selectedShape, setSelectedShape] = useState<ShapeName | null>(null);
 
+  // Reset shape selection whenever a new shanten result arrives.
+  // This is the only remaining useEffect in this component, and it is
+  // now strictly for UI state management, not computation.
   useEffect(() => {
-    if (currentHand.length < 13) {
-      setResult(null);
+    if (shanten === null) {
       setSelectedShape(null);
-      return;
+    } else {
+      setSelectedShape(shanten.defaultShape);
     }
-    import("../../logic/shanten").then(({ calculateShanten }) => {
-      const calculated = calculateShanten(currentHand);
-      setResult(calculated);
-      setSelectedShape(calculated.defaultShape);
-    });
-  }, [currentHand]);
+  }, [shanten]);
 
-  if (result === null || selectedShape === null) {
+  if (shanten === null || selectedShape === null) {
     return (
       <div className="shanten-panel">
         <p className="shanten-panel__placeholder">Select 13 tiles to see shanten.</p>
@@ -58,14 +54,14 @@ function ShantenPanel({ currentHand, tileSkin }: ShantenPanelProps) {
     );
   }
 
-const shapes: ShapeName[] = ["standard", "chiitoitsu", "kokushi"];
-  const active: ShapeResult = result[selectedShape];
+  const shapes: ShapeName[] = ["standard", "chiitoitsu", "kokushi"];
+  const active: ShapeResult = shanten[selectedShape];
   const groups: ShantenGroup[] = active.decompositions[0];
 
   // Collect every shape currently at tenpai (distance exactly 0, not
   // -1 which is hand complete and not riichi-declarable).
   const riichiForms: ShapeName[] = shapes.filter(
-    (shape) => result[shape].distance === 0
+    (shape) => shanten[shape].distance === 0
   );
   const activeIsRiichi = active.distance === 0;
   const otherRiichiForms = riichiForms.filter((s) => s !== selectedShape);

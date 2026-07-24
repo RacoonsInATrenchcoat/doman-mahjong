@@ -15,7 +15,6 @@ import {
   classifySequenceWait,
 } from "./tile-utils";
 import type { VisualSlot } from "./tile-utils";
-import { calculateStandardShanten } from "./shanten/standard";
 import type { ShantenGroup } from "./shanten/standard";
 import { calculateShanten } from "./shanten";
 

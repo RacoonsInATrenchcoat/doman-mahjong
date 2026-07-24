@@ -2,13 +2,9 @@ import { useState, useEffect, useLayoutEffect, useRef } from "react";
 //Fun fact: useLayoutEffect is the same as useEffect, BUT it runs before the page is loaded, aka. there will be not "flash"  where it resizes after it has loaded.
 import type { Tile } from "./data/tiles";
 //Have to add "type" otherwise it errors out, due to Typescript rules.
-import { ALL_HANDS } from "./data/hands";
-import { HAND_CHECKERS } from "./logic/hand-checkers";
-import { sortResults, buildCombinedYakuResult } from "./logic/hand-sorter";
-//No type added here as "sortResults is a real function"
 import type { SortMode } from "./logic/hand-sorter";
 //Type used here as "SortMode is only a type"
-import { calculateShanten } from "./logic/shanten";
+import { useHandCalculations } from "./hooks/use-hand-calculations";
 import type { LanguageOption, TileSkinOption, ScoringRuleset } from "./settings";
 import { TILE_HEIGHT_DEFAULT, TILE_HEIGHT_MIN, TILE_HEIGHT_MAX } from "./settings";
 import TilePicker from "./components/tile-picker/tile-picker";
@@ -116,33 +112,8 @@ function App() {
     setIsResultsOpen((prev) => !prev);
   };
 
-  const rawResults =
-    currentHand.length >= 13
-      ? ALL_HANDS.map((hand) => {
-        const checker = HAND_CHECKERS[hand.id];
-        const result = checker(currentHand, seatWind, roundWind);
-        return { hand, result };
-      })
-      : null;
-
-  const results = rawResults === null ? null : sortResults(rawResults, sortMode);
-
-  const combinedYaku =
-    //Results and rawresults are separate, as the result is checked by sort-mode filter afterwards.
-    //Technically it can be sorted within, but it's good code to sort things separately from the raw results.
-    rawResults === null ? null : buildCombinedYakuResult(rawResults, currentHand);
-
-  // Only computed at 14 tiles. For each tile, temporarily removes it and
-  // runs the full shanten calculation on the remaining 13, recording the
-  // minimum distance across all three shapes. Lower is better.
-  const discardDistances: number[] | null =
-    currentHand.length === 14
-      ? currentHand.map((_, index) => {
-        const subHand = currentHand.filter((_, i) => i !== index);
-        const { standard, chiitoitsu, kokushi } = calculateShanten(subHand);
-        return Math.min(standard.distance, chiitoitsu.distance, kokushi.distance);
-      })
-      : null;
+  const { results, combinedYaku, discardDistances, shanten } =
+    useHandCalculations(currentHand, seatWind, roundWind, sortMode);
 
 
   // Temporary testing, Shanten verification only for debugging the results.
@@ -193,8 +164,17 @@ function App() {
       <div className="app__main">
         <TilePicker currentHand={currentHand} onTileClick={addTile} tileSkin={tileSkin} />
         <div className="app__results-panel">
-          <ShantenPanel currentHand={currentHand} tileSkin={tileSkin} />
-          <CombinedYakuPanel result={combinedYaku} language={language} tileSkin={tileSkin} scoringRuleset={scoringRuleset} />
+          <ShantenPanel shanten={shanten} tileSkin={tileSkin} />
+          <CombinedYakuPanel
+            result={combinedYaku}
+            shanten={shanten}
+            language={language}
+            tileSkin={tileSkin}
+            scoringRuleset={scoringRuleset}
+            isTsumo={currentHand.length === 14}
+            seatWind={seatWind}
+            roundWind={roundWind}
+          />
           <ResultsList
             results={results}
             isOpen={isResultsOpen}

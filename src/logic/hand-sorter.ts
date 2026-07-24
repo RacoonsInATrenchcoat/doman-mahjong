@@ -11,7 +11,8 @@ export type ResultEntry = {
 
 export function sortResults(
   results: ResultEntry[],
-  sortMode: SortMode
+  // the _ here is forcing Typescript to not error it, as it is "intentionally present in the signature but not used in this implementation."
+  _sortMode: SortMode
 ): ResultEntry[] {
   const sorted = [...results];
 
