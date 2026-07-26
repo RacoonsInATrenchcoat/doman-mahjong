@@ -303,9 +303,8 @@ function checkTanyao(
   return {
     possible: true,
     tilesNeeded,
-    gapDescription: `Replace ${tilesNeeded} terminal or honour tile${
-      tilesNeeded !== 1 ? "s" : ""
-    } with simples (2 to 8).`,
+    gapDescription: `Replace ${tilesNeeded} terminal or honour tile${tilesNeeded !== 1 ? "s" : ""
+      } with simples (2 to 8).`,
     visual,
   };
 }
@@ -346,9 +345,8 @@ function checkChiitoitsu(
   return {
     possible: true,
     tilesNeeded,
-    gapDescription: `Has ${uniquePairs} pair${
-      uniquePairs !== 1 ? "s" : ""
-    }. Needs ${missingPairs} more pair${missingPairs !== 1 ? "s" : ""} (${tilesNeeded} tile${tilesNeeded !== 1 ? "s" : ""}).`,
+    gapDescription: `Has ${uniquePairs} pair${uniquePairs !== 1 ? "s" : ""
+      }. Needs ${missingPairs} more pair${missingPairs !== 1 ? "s" : ""} (${tilesNeeded} tile${tilesNeeded !== 1 ? "s" : ""}).`,
     visual,
   };
 }
@@ -386,16 +384,7 @@ function checkKokushi(
     ];
   }
 
-  if (missingOrphans === 0 && hasDuplicate) {
-    return {
-      possible: true,
-      tilesNeeded: 0,
-      gapDescription: "Hand satisfies Kokushi Musou.",
-      visual,
-    };
-  }
-
-if (missingOrphans === 0 && !hasDuplicate) {
+  if (missingOrphans === 0 && !hasDuplicate) {
     // All 13 orphan types held, no duplicate yet, is precisely the
     // 13-way wait. The function's first branch above (missingOrphans
     // === 0 && hasDuplicate) is unreachable dead code, since holding all
@@ -422,9 +411,8 @@ if (missingOrphans === 0 && !hasDuplicate) {
   return {
     possible: true,
     tilesNeeded,
-    gapDescription: `Has ${uniqueCount} of 13 terminals and honours.${
-      !hasDuplicate ? " Also needs 1 duplicate." : ""
-    }`,
+    gapDescription: `Has ${uniqueCount} of 13 terminals and honours.${!hasDuplicate ? " Also needs 1 duplicate." : ""
+      }`,
     visual,
   };
 }
@@ -1251,7 +1239,7 @@ function checkChuurenPoutou(
     buildTileSlots(`${bestSuit}-${v}`, counts[v], minRequired[v])
   );
 
-if (deficiency === 0) {
+  if (deficiency === 0) {
     // deficiency reaching exactly 0 means the hand matches the minimal
     // 1112345678999 pattern with no extra tile yet, which is precisely
     // the pure, 9-sided wait. Any extra tile beyond this minimal pattern
@@ -1320,7 +1308,7 @@ function checkRyanpeikou(
     }
   }
 
-candidates.sort((a, b) => a.cost - b.cost);
+  candidates.sort((a, b) => a.cost - b.cost);
   const first = candidates[0];
   // A second candidate in a different suit never shares tiles with the
   // first, so it is always safe. Within the same suit, two sequences only
@@ -1412,18 +1400,45 @@ function checkChanta(
   const { compatible, incompatible } = partitionChantaTiles(hand, true);
   const visual = [...buildHeldSlots(compatible), ...buildMissingSlots(incompatible)];
 
-  if (incompatible.length === 0) {
+  if (incompatible.length > 0) {
     return {
       possible: true,
-      tilesNeeded: 0,
-      gapDescription: "Every tile can belong to a terminal or honour set. Hand may satisfy Chanta.",
+      tilesNeeded: incompatible.length,
+      gapDescription: `Has ${incompatible.length} tile${incompatible.length !== 1 ? "s" : ""} that cannot touch a terminal (values 4 to 6, or 3 or more identical copies of an edge value).`,
       visual,
     };
   }
+
+  // All tiles pass the composition check. At tenpai, also verify the pair
+  // specifically contains a terminal or honour, since the composition check
+  // only verifies individual tile compatibility, not which tile is the pair.
+  const { standard } = calculateShanten(hand);
+  if (standard.distance === 0 && standard.decompositions.length > 0) {
+    const groups = standard.decompositions[0];
+    const pairGroup = groups.find((g) => g.label === "Pair");
+    if (pairGroup) {
+      const pairSlot = pairGroup.slots.find(
+        (s) => s.satisfied && s.ref.kind === "tile"
+      );
+      if (pairSlot && pairSlot.ref.kind === "tile") {
+        const pairTileId = pairSlot.ref.tileId;
+        const pairTile = hand.find((t) => t.id === pairTileId);
+        if (pairTile && !isTerminalOrHonour(pairTile)) {
+          return {
+            possible: true,
+            tilesNeeded: 1,
+            gapDescription: `Tenpai, but the pair is ${pairTileId}, a simple tile. Chanta requires the pair to touch a terminal or honour.`,
+            visual,
+          };
+        }
+      }
+    }
+  }
+
   return {
     possible: true,
-    tilesNeeded: incompatible.length,
-    gapDescription: `Has ${incompatible.length} tile${incompatible.length !== 1 ? "s" : ""} that cannot touch a terminal (values 4 to 6, or 3 or more identical copies of an edge value).`,
+    tilesNeeded: 0,
+    gapDescription: "Every tile can belong to a terminal or honour set. Hand may satisfy Chanta.",
     visual,
   };
 }
@@ -1436,18 +1451,45 @@ function checkJunchan(
   const { compatible, incompatible } = partitionChantaTiles(hand, false);
   const visual = [...buildHeldSlots(compatible), ...buildMissingSlots(incompatible)];
 
-  if (incompatible.length === 0) {
+  if (incompatible.length > 0) {
     return {
       possible: true,
-      tilesNeeded: 0,
-      gapDescription: "Every tile is a terminal or can touch one, with no honours. Hand may satisfy Junchan.",
+      tilesNeeded: incompatible.length,
+      gapDescription: `Has ${incompatible.length} honour or non-edge tile${incompatible.length !== 1 ? "s" : ""}. Junchan allows no honours.`,
       visual,
     };
   }
+
+  // All tiles pass the composition check. At tenpai, also verify the pair
+  // specifically contains a terminal, since Junchan does not allow honours
+  // in the pair and the composition check only verifies tile compatibility.
+  const { standard } = calculateShanten(hand);
+  if (standard.distance === 0 && standard.decompositions.length > 0) {
+    const groups = standard.decompositions[0];
+    const pairGroup = groups.find((g) => g.label === "Pair");
+    if (pairGroup) {
+      const pairSlot = pairGroup.slots.find(
+        (s) => s.satisfied && s.ref.kind === "tile"
+      );
+      if (pairSlot && pairSlot.ref.kind === "tile") {
+        const pairTileId = pairSlot.ref.tileId;
+        const pairTile = hand.find((t) => t.id === pairTileId);
+        if (pairTile && !isTerminal(pairTile)) {
+          return {
+            possible: true,
+            tilesNeeded: 1,
+            gapDescription: `Tenpai, but the pair is ${pairTileId}, which is not a terminal. Junchan requires the pair to be a terminal tile.`,
+            visual,
+          };
+        }
+      }
+    }
+  }
+
   return {
     possible: true,
-    tilesNeeded: incompatible.length,
-    gapDescription: `Has ${incompatible.length} honour or non-edge tile${incompatible.length !== 1 ? "s" : ""}. Junchan allows no honours.`,
+    tilesNeeded: 0,
+    gapDescription: "Every tile is a terminal or can touch one, with no honours. Hand may satisfy Junchan.",
     visual,
   };
 }
@@ -1506,35 +1548,35 @@ function checkMenzenTsumo(
 // ----------------------------------------------------------------
 
 export const HAND_CHECKERS: Record<string, CheckerFn> = {
-  pinfu:             checkPinfu,
-  tanyao:            checkTanyao,
-  "menzen-tsumo":    checkMenzenTsumo,
-  iipeikou:          checkIipeikou,
-  ryanpeikou:        checkRyanpeikou,
-  "yakuhai-white":   checkYakuhaiWhite,
-  "yakuhai-green":   checkYakuhaiGreen,
-  "yakuhai-red":     checkYakuhaiRed,
-  "seat-wind":       checkSeatWind,
-  "round-wind":      checkRoundWind,
-  chiitoitsu:        checkChiitoitsu,
+  pinfu: checkPinfu,
+  tanyao: checkTanyao,
+  "menzen-tsumo": checkMenzenTsumo,
+  iipeikou: checkIipeikou,
+  ryanpeikou: checkRyanpeikou,
+  "yakuhai-white": checkYakuhaiWhite,
+  "yakuhai-green": checkYakuhaiGreen,
+  "yakuhai-red": checkYakuhaiRed,
+  "seat-wind": checkSeatWind,
+  "round-wind": checkRoundWind,
+  chiitoitsu: checkChiitoitsu,
   "sanshoku-doujun": checkSanshokuDoujun,
-  ittsuu:            checkIttsuu,
-  toitoi:            checkToitoi,
-  sanankou:          checkSanankou,
+  ittsuu: checkIttsuu,
+  toitoi: checkToitoi,
+  sanankou: checkSanankou,
   "sanshoku-doukou": checkSanshokuDoukou,
-  shousangen:        checkShousangen,
-  honitsu:           checkHonitsu,
-  chanta:            checkChanta,
-  junchan:           checkJunchan,
-  chinitsu:          checkChinitsu,
-  kokushi:           checkKokushi,
-  suuankou:          checkSuuankou,
-  daisangen:         checkDaisangen,
-  shousuushi:        checkShousuushi,
-  daisuushi:         checkDaisuushi,
-  tsuuiisou:         checkTsuuiisou,
-  chinroutou:        checkChinroutou,
-  honroutou:         checkHonroutou,
-  ryuuiisou:         checkRyuuiisou,
-  "chuuren-poutou":  checkChuurenPoutou,
+  shousangen: checkShousangen,
+  honitsu: checkHonitsu,
+  chanta: checkChanta,
+  junchan: checkJunchan,
+  chinitsu: checkChinitsu,
+  kokushi: checkKokushi,
+  suuankou: checkSuuankou,
+  daisangen: checkDaisangen,
+  shousuushi: checkShousuushi,
+  daisuushi: checkDaisuushi,
+  tsuuiisou: checkTsuuiisou,
+  chinroutou: checkChinroutou,
+  honroutou: checkHonroutou,
+  ryuuiisou: checkRyuuiisou,
+  "chuuren-poutou": checkChuurenPoutou,
 };

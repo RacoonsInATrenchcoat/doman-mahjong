@@ -11,19 +11,28 @@ export type ResultEntry = {
 
 export function sortResults(
   results: ResultEntry[],
-  // the _ here is forcing Typescript to not error it, as it is "intentionally present in the signature but not used in this implementation."
-  _sortMode: SortMode
+  sortMode: SortMode
 ): ResultEntry[] {
   const sorted = [...results];
 
-  // Both modes use steps as the primary sort key, so Kokushi at 13 han
-  // and 13 steps never floats above a 1-han hand at 1 step. The mode
-  // determines how ties within the same step count are broken:
-  // least-steps breaks ties by han descending (most valuable option first
-  // within the same distance), and most-han does the same, making both
-  // modes produce an identical sort. The mode selector is kept for future
-  // differentiation if the sort strategy is revisited.
   sorted.sort((a, b) => {
+    // 0-step entries always appear first in both modes, since they are
+    // currently complete and represent the most immediately relevant information.
+    const aComplete = a.result.tilesNeeded === 0 ? 0 : 1;
+    const bComplete = b.result.tilesNeeded === 0 ? 0 : 1;
+    if (aComplete !== bComplete) return aComplete - bComplete;
+
+    if (sortMode === "most-han") {
+      // Within the same completion tier: highest han first,
+      // steps ascending as tiebreaker within equal han.
+      if (b.hand.hanValue !== a.hand.hanValue) {
+        return b.hand.hanValue - a.hand.hanValue;
+      }
+      return a.result.tilesNeeded - b.result.tilesNeeded;
+    }
+    // Default state when not Most-Han
+    // least-steps: lowest steps first,
+    // highest han as tiebreaker within equal steps.
     if (a.result.tilesNeeded !== b.result.tilesNeeded) {
       return a.result.tilesNeeded - b.result.tilesNeeded;
     }
@@ -36,7 +45,6 @@ export function sortResults(
 export type CombinedYakuResult = {
   wholeHandYaku: { id: string; name: string; nameEng: string; hanValue: number; yakumanUnits: number; yakumanUnitsRiichi: number }[];
   structuralGroups: { id: string; name: string; nameEng: string; hanValue: number; yakumanUnits: number; yakumanUnitsRiichi: number; visual: VisualSlot[] }[];
-  totalHan: number;
   inactiveTileIds: string[];
 };
 
@@ -51,7 +59,7 @@ export function buildCombinedYakuResult(
 ): CombinedYakuResult {
   const complete = results.filter((r) => r.result.tilesNeeded === 0);
 
-const wholeHandYaku: { id: string; name: string; nameEng: string; hanValue: number; yakumanUnits: number; yakumanUnitsRiichi: number }[] = [];
+  const wholeHandYaku: { id: string; name: string; nameEng: string; hanValue: number; yakumanUnits: number; yakumanUnitsRiichi: number }[] = [];
   const structuralGroups: { id: string; name: string; nameEng: string; hanValue: number; yakumanUnits: number; yakumanUnitsRiichi: number; visual: VisualSlot[] }[] = [];
   const claimedCounts = new Map<string, number>();
 
@@ -68,8 +76,6 @@ const wholeHandYaku: { id: string; name: string; nameEng: string; hanValue: numb
     }
   }
 
-  const totalHan = complete.reduce((sum, r) => sum + r.hand.hanValue, 0);
-
   // Walks the real hand once, decrementing a running claim count per tile
   // id, so a 4th physical copy correctly shows inactive even when the
   // other 3 are genuinely claimed by a complete triplet-based yaku.
@@ -84,5 +90,5 @@ const wholeHandYaku: { id: string; name: string; nameEng: string; hanValue: numb
     }
   }
 
-  return { wholeHandYaku, structuralGroups, totalHan, inactiveTileIds };
+  return { wholeHandYaku, structuralGroups, inactiveTileIds };
 }
